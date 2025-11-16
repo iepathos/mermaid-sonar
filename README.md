@@ -2,7 +2,7 @@
 
 > **Detect hidden complexity in your Mermaid diagrams**
 
-A research-backed complexity analyzer and readability linter for Mermaid diagrams. Like sonar detects underwater obstacles, Mermaid-Sonar detects hidden complexity issues before they cause readability problems.
+A complexity analyzer and readability linter for Mermaid diagrams. Like sonar detects underwater obstacles, Mermaid-Sonar detects hidden complexity issues before they cause readability problems.
 
 [![npm version](https://badge.fury.io/js/mermaid-sonar.svg)](https://www.npmjs.com/package/mermaid-sonar)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
