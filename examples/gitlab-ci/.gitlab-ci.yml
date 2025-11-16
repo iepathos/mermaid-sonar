@@ -1,0 +1,47 @@
+# GitLab CI configuration for Mermaid-Sonar
+
+stages:
+  - test
+  - report
+
+# Lint diagrams and fail on errors
+lint-diagrams:
+  stage: test
+  image: node:20
+  script:
+    - npx mermaid-sonar --format junit -o junit.xml docs/
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+  only:
+    changes:
+      - '**/*.md'
+
+# Generate markdown report (doesn't fail pipeline)
+diagram-report:
+  stage: report
+  image: node:20
+  script:
+    - npx mermaid-sonar --format markdown -o diagram-report.md docs/
+  artifacts:
+    when: always
+    paths:
+      - diagram-report.md
+    expire_in: 30 days
+  only:
+    changes:
+      - '**/*.md'
+  allow_failure: true
+
+# Strict mode for main branch
+strict-lint:
+  stage: test
+  image: node:20
+  script:
+    - npx mermaid-sonar --strict --max-warnings 0 docs/
+  only:
+    - main
+  only:
+    changes:
+      - '**/*.md'
