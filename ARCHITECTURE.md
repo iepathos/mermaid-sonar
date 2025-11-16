@@ -256,31 +256,58 @@ export function analyzeComplete(diagram: Diagram): CompleteAnalysis {
 - **Layout Patterns** (Stage 3): Hierarchy detection, flow patterns, clustering
 - **Best Practices** (Stage 2): Research-backed heuristics, readability checks
 
-### 3. Output Formats (Stage 4)
+### 3. Output Formats (Stage 4) ✅ IMPLEMENTED
 
-**Location**: `src/formatters/` (to be created)
+**Location**: `src/reporters/`
 
-**Extension Strategy**:
+**Architecture**:
+The reporter system uses a factory pattern with a unified interface:
 ```typescript
-// src/formatters/json.ts
-export function formatAsJSON(results: AnalysisResult[]): string {
-  return JSON.stringify(results, null, 2);
+// src/reporters/types.ts
+export type OutputFormat = 'console' | 'json' | 'markdown' | 'github' | 'junit';
+
+export interface Reporter {
+  format(results: AnalysisResult[], summary: Summary): string;
 }
 
-// src/formatters/sarif.ts
-export function formatAsSARIF(results: AnalysisResult[]): string {
-  // SARIF format for GitHub integration
+// src/reporters/index.ts
+export function createReporter(format: OutputFormat, version: string): Reporter {
+  switch (format) {
+    case 'console': return new ConsoleReporter(version);
+    case 'json': return new JSONReporter();
+    case 'markdown': return new MarkdownReporter(version);
+    case 'github': return new GitHubReporter(version);
+    case 'junit': return new JUnitReporter();
+  }
 }
-
-// Update CLI to support format flag
-.option('-f, --format <type>', 'output format', 'text')
 ```
 
-**Planned Formats**:
-- JSON (machine-readable)
-- SARIF (GitHub Code Scanning)
-- Markdown (reports)
-- HTML (interactive dashboards)
+**Implemented Reporters**:
+- **Console** (`src/reporters/console.ts`): Colorized terminal output with detailed metrics and issue formatting
+- **JSON** (`src/reporters/json.ts`): Machine-readable JSON for CI/CD integration
+- **Markdown** (`src/reporters/markdown.ts`): Formatted markdown reports with tables and emoji indicators
+- **GitHub** (`src/reporters/github.ts`): GitHub-flavored markdown with collapsible sections
+- **JUnit** (`src/reporters/junit.ts`): JUnit XML format for test result integration
+
+**CLI Integration**:
+```typescript
+.option('-f, --format <format>', 'Output format (console, json, markdown, github, junit)', 'console')
+.option('-o, --output <file>', 'Write output to file instead of stdout')
+```
+
+**Extension Points**:
+Additional reporters can be added by:
+1. Creating new reporter in `src/reporters/<name>.ts`
+2. Implementing the `Reporter` interface
+3. Adding to the factory in `src/reporters/index.ts`
+4. Updating the `OutputFormat` type
+
+**CLI Enhancements** (Stage 4):
+The CLI was enhanced with comprehensive file discovery and control options:
+- **File Discovery** (`src/cli/files.ts`): Recursive directory scanning with glob pattern support
+- **Exit Code Management** (`src/cli/exit-codes.ts`): CI/CD-friendly exit codes (0 = success, 1 = errors/warnings with --strict, 2 = execution failure)
+- **Control Flags**: `--quiet`, `--verbose`, `--recursive`, `--strict`, `--max-warnings`, `--no-rules`
+- **Config Support**: Load thresholds and rules from `.mermaid-sonarrc.json` or package.json
 
 ### 4. Configuration System (Stage 5)
 

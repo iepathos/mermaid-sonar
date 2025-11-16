@@ -95,6 +95,9 @@
       "**/__tests__/**/*.ts",
       "**/?(*.)+(spec|test).ts"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
+    ],
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts",

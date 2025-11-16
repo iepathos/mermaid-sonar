@@ -9,131 +9,156 @@
 import { program } from 'commander';
 import { analyzeDiagramFileWithRules } from './index';
 import { readFileSync } from 'fs';
+import { writeFile } from 'fs/promises';
 import chalk from 'chalk';
-import type { Issue } from './rules';
+import type { AnalysisResult } from './analyzers/types';
+import type { OutputFormat } from './reporters/types';
+import { createReporter, generateSummary } from './reporters';
+import { findFiles } from './cli/files';
+import { determineExitCode, ExitCode } from './cli/exit-codes';
+import { loadConfigSync } from './config';
 
 // Read package.json for version
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
 
 /**
- * Formats metrics for terminal output
+ * CLI options interface
  */
-function formatMetrics(metrics: {
-  nodeCount: number;
-  edgeCount: number;
-  graphDensity: number;
-  maxBranchWidth: number;
-  averageDegree: number;
-}): string {
-  return `
-  Nodes:          ${metrics.nodeCount}
-  Edges:          ${metrics.edgeCount}
-  Density:        ${metrics.graphDensity.toFixed(3)}
-  Max Branch:     ${metrics.maxBranchWidth}
-  Avg Degree:     ${metrics.averageDegree.toFixed(2)}
-`.trim();
+interface CLIOptions {
+  format: OutputFormat;
+  output?: string;
+  config?: string;
+  quiet: boolean;
+  verbose: boolean;
+  recursive: boolean;
+  strict: boolean;
+  maxWarnings?: number;
+  noRules: boolean;
 }
 
 /**
- * Formats an issue for terminal output
+ * Main CLI function
  */
-function formatIssue(issue: Issue): string {
-  const severityColors = {
-    error: chalk.red,
-    warning: chalk.yellow,
-    info: chalk.blue,
-  };
+async function runCLI(files: string[], options: CLIOptions): Promise<number> {
+  const startTime = Date.now();
 
-  const severityLabels = {
-    error: 'ERROR',
-    warning: 'WARNING',
-    info: 'INFO',
-  };
+  try {
+    // Find all matching files
+    const filePaths = await findFiles(files, {
+      recursive: options.recursive,
+      extensions: ['.md'],
+    });
 
-  const color = severityColors[issue.severity];
-  const label = severityLabels[issue.severity];
+    if (filePaths.length === 0) {
+      if (!options.quiet) {
+        console.error(chalk.red('Error: No markdown files found'));
+      }
+      return ExitCode.EXECUTION_FAILURE;
+    }
 
-  let output = `\n${color.bold(`${label}:`)} ${issue.message}`;
-  output += `\n  ${chalk.dim(`File: ${issue.filePath}:${issue.line}`)}`;
+    if (options.verbose && !options.quiet) {
+      console.log(chalk.dim(`Analyzing ${filePaths.length} file(s)...\n`));
+    }
 
-  if (issue.suggestion) {
-    output += `\n\n  ${chalk.cyan('Suggestion:')} ${issue.suggestion}`;
+    // Load configuration
+    const config = options.config ? loadConfigSync(options.config) : loadConfigSync();
+
+    // Analyze all files
+    const allResults: AnalysisResult[] = [];
+
+    for (const filePath of filePaths) {
+      try {
+        const results = options.noRules
+          ? analyzeDiagramFileWithRules(filePath, config).map((r) => ({ ...r, issues: [] }))
+          : analyzeDiagramFileWithRules(filePath, config);
+
+        allResults.push(...results);
+      } catch (error) {
+        if (!options.quiet) {
+          console.error(
+            chalk.red(
+              `Error analyzing ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`
+            )
+          );
+        }
+      }
+    }
+
+    if (allResults.length === 0) {
+      if (!options.quiet) {
+        console.log('No Mermaid diagrams found.');
+      }
+      return ExitCode.SUCCESS;
+    }
+
+    // Generate summary
+    const duration = Date.now() - startTime;
+    const summary = generateSummary(allResults, duration);
+
+    // Format output
+    const reporter = createReporter(options.format, packageJson.version);
+    const output = reporter.format(allResults, summary);
+
+    // Write output
+    if (options.output) {
+      await writeFile(options.output, output, 'utf-8');
+      if (!options.quiet) {
+        console.log(chalk.green(`Report written to ${options.output}`));
+      }
+    } else {
+      console.log(output);
+    }
+
+    // Determine exit code
+    return determineExitCode(summary, {
+      strict: options.strict,
+      maxWarnings: options.maxWarnings,
+    });
+  } catch (error) {
+    if (!options.quiet) {
+      console.error(
+        chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      );
+    }
+    return ExitCode.EXECUTION_FAILURE;
   }
-
-  if (issue.citation) {
-    output += `\n  ${chalk.dim(issue.citation)}`;
-  }
-
-  return output;
 }
 
 /**
- * Main CLI command
+ * Main CLI program
  */
 program
   .name('mermaid-sonar')
   .description('Detect hidden complexity in Mermaid diagrams')
   .version(packageJson.version)
-  .argument('<file>', 'Markdown file to analyze')
-  .option('--no-rules', 'Disable rule validation (only show metrics)')
-  .action((file: string, options: { rules: boolean }) => {
-    try {
-      const results = analyzeDiagramFileWithRules(file);
-
-      if (results.length === 0) {
-        console.log('No Mermaid diagrams found in file.');
-        return;
-      }
-
-      console.log(`\nAnalyzed ${results.length} diagram(s) in ${file}\n`);
-
-      let hasErrors = false;
-      let hasWarnings = false;
-
-      results.forEach((result, index) => {
-        const { diagram, metrics, issues } = result;
-        console.log(
-          chalk.bold(`Diagram #${index + 1}`) + chalk.dim(` (line ${diagram.startLine}):`)
-        );
-        console.log(formatMetrics(metrics));
-
-        // Display issues if rules are enabled
-        if (options.rules && issues && issues.length > 0) {
-          issues.forEach((issue) => {
-            console.log(formatIssue(issue));
-
-            if (issue.severity === 'error') {
-              hasErrors = true;
-            } else if (issue.severity === 'warning') {
-              hasWarnings = true;
-            }
-          });
-        }
-
-        console.log('');
-      });
-
-      // Summary
-      const totalIssues = results.reduce((sum, r) => sum + (r.issues?.length ?? 0), 0);
-      if (totalIssues > 0) {
-        console.log(chalk.dim(`Found ${totalIssues} issue(s)\n`));
-      }
-
-      // Exit with error code if errors found
-      if (hasErrors) {
-        process.exit(1);
-      } else if (hasWarnings) {
-        // Exit code 0 for warnings (non-blocking)
-        process.exit(0);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(chalk.red(`Error: ${error.message}`));
-      } else {
-        console.error(chalk.red('An unexpected error occurred'));
-      }
-      process.exit(1);
+  .argument('<files...>', 'Files, directories, or glob patterns to analyze')
+  .option(
+    '-f, --format <format>',
+    'Output format (console, json, markdown, github, junit)',
+    'console'
+  )
+  .option('-o, --output <file>', 'Write output to file instead of stdout')
+  .option('-c, --config <path>', 'Path to configuration file')
+  .option('-q, --quiet', 'Suppress non-error output', false)
+  .option('-v, --verbose', 'Show detailed analysis information', false)
+  .option('-r, --recursive', 'Recursively scan directories', false)
+  .option('-s, --strict', 'Treat warnings as errors', false)
+  .option('--max-warnings <number>', 'Maximum warnings before failing', (val) => parseInt(val, 10))
+  .option('--no-rules', 'Disable rule validation (only show metrics)', false)
+  .action(async (files: string[], options: CLIOptions) => {
+    // Validate format
+    const validFormats: OutputFormat[] = ['console', 'json', 'markdown', 'github', 'junit'];
+    if (!validFormats.includes(options.format)) {
+      console.error(
+        chalk.red(
+          `Error: Invalid format "${options.format}". Valid formats: ${validFormats.join(', ')}`
+        )
+      );
+      process.exit(ExitCode.EXECUTION_FAILURE);
     }
+
+    const exitCode = await runCLI(files, options);
+    process.exit(exitCode);
   });
 
 program.parse();

@@ -9,6 +9,7 @@ export type { Diagram, DiagramType } from './extractors/types';
 export type { Metrics, AnalysisResult } from './analyzers/types';
 export type { Issue, Severity, Rule, RuleConfig } from './rules';
 export type { Config, PartialConfig } from './config';
+export type { Reporter, OutputFormat, Summary, JSONOutput } from './reporters';
 
 // Re-export extraction functions
 export { extractDiagrams, extractDiagramsFromFile } from './extractors/markdown';
@@ -21,6 +22,16 @@ export { loadConfig, loadConfigSync, defaultConfig } from './config';
 
 // Re-export rule functions
 export { runRules, getAllRules, getRule } from './rules';
+
+// Re-export reporter functions
+export { createReporter, generateSummary } from './reporters';
+export {
+  ConsoleReporter,
+  JSONReporter,
+  MarkdownReporter,
+  GitHubReporter,
+  JUnitReporter,
+} from './reporters';
 
 // Main API
 import { extractDiagramsFromFile } from './extractors/markdown';

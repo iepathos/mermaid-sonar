@@ -102,6 +102,241 @@ const results = await analyzeDiagrams(['docs/**/*.md']);
 console.log(`Found ${results.issues.length} issues`);
 ```
 
+### JSON Output Schema
+
+When using `--format json`, the output follows this TypeScript schema:
+
+```typescript
+interface JSONOutput {
+  version: string;
+  summary: {
+    filesAnalyzed: number;
+    diagramsAnalyzed: number;
+    totalIssues: number;
+    errorCount: number;
+    warningCount: number;
+    infoCount: number;
+    duration: number; // milliseconds
+  };
+  results: Array<{
+    diagram: {
+      content: string;     // Raw Mermaid code
+      startLine: number;   // 1-indexed line number
+      filePath: string;    // Source file path
+      type: 'flowchart' | 'graph' | 'unknown';
+    };
+    metrics: {
+      nodeCount: number;
+      edgeCount: number;
+      graphDensity: number;      // edges / (nodes × (nodes-1))
+      maxBranchWidth: number;    // Max children from any node
+      averageDegree: number;     // Avg connections per node
+    };
+    issues: Array<{
+      rule: string;           // Rule identifier
+      severity: 'error' | 'warning' | 'info';
+      message: string;        // Human-readable message
+      filePath: string;       // Source file path
+      line: number;           // Line number
+      suggestion?: string;    // Fix suggestion
+      citation?: string;      // Research citation URL
+    }>;
+  }>;
+}
+```
+
+**Example JSON output**:
+
+```json
+{
+  "version": "0.1.0",
+  "summary": {
+    "filesAnalyzed": 3,
+    "diagramsAnalyzed": 5,
+    "totalIssues": 2,
+    "errorCount": 1,
+    "warningCount": 1,
+    "infoCount": 0,
+    "duration": 42
+  },
+  "results": [
+    {
+      "diagram": {
+        "content": "graph TD\n  A --> B\n  ...",
+        "startLine": 42,
+        "filePath": "docs/architecture.md",
+        "type": "graph"
+      },
+      "metrics": {
+        "nodeCount": 55,
+        "edgeCount": 78,
+        "graphDensity": 0.026,
+        "maxBranchWidth": 12,
+        "averageDegree": 2.84
+      },
+      "issues": [
+        {
+          "rule": "max-branch-width",
+          "severity": "error",
+          "message": "Wide tree diagram with 12 parallel branches (>8 max)",
+          "filePath": "docs/architecture.md",
+          "line": 42,
+          "suggestion": "Consider using 'graph LR' or split into multiple diagrams",
+          "citation": "https://example.com/visual-hierarchy-research"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## CLI Reference
+
+### Command Syntax
+
+```bash
+mermaid-sonar [options] <files...>
+```
+
+### Arguments
+
+- `<files...>` - Files, directories, or glob patterns to analyze (required)
+  - Examples: `README.md`, `docs/`, `"src/**/*.md"`
+  - Supports multiple arguments: `docs/ README.md examples/`
+
+### Options
+
+#### Output Control
+
+- `-f, --format <format>` - Output format (default: `console`)
+  - **console**: Colorized terminal output with detailed metrics
+  - **json**: Machine-readable JSON for CI/CD integration
+  - **markdown**: Formatted markdown report with tables
+  - **github**: GitHub-flavored markdown with collapsible sections
+  - **junit**: JUnit XML format for test result integration
+
+- `-o, --output <file>` - Write output to file instead of stdout
+  - Example: `--output report.json`
+  - Works with all formats
+
+- `-q, --quiet` - Suppress non-error output
+  - Only shows errors, no progress or summary
+  - Useful for silent CI/CD runs
+
+- `-v, --verbose` - Show detailed analysis information
+  - Displays file counts and processing details
+  - Cannot be used with `--quiet`
+
+#### Analysis Control
+
+- `-r, --recursive` - Recursively scan directories
+  - Example: `mermaid-sonar -r docs/` scans all subdirectories
+  - Without this flag, only top-level files are analyzed
+
+- `-s, --strict` - Treat warnings as errors
+  - Exit code 1 if any warnings are found
+  - Useful for enforcing zero-warning policies in CI
+
+- `--max-warnings <number>` - Maximum warnings before failing
+  - Example: `--max-warnings 5`
+  - Exit code 1 if warnings exceed this threshold
+  - Requires numeric value
+
+- `--no-rules` - Disable rule validation (only show metrics)
+  - Shows raw metrics without applying rules
+  - Useful for understanding diagram characteristics
+
+#### Configuration
+
+- `-c, --config <path>` - Path to configuration file
+  - Example: `--config custom-config.json`
+  - Overrides automatic config discovery
+  - See [Configuration](#configuration) section
+
+### Exit Codes
+
+Mermaid-Sonar uses standard exit codes for CI/CD integration:
+
+- **0**: Success - No errors found
+  - All diagrams analyzed successfully
+  - No errors, or only warnings (without `--strict`)
+
+- **1**: Validation failure - Errors or warnings with `--strict`
+  - Found errors in one or more diagrams
+  - Found warnings when `--strict` is enabled
+  - Exceeded `--max-warnings` threshold
+
+- **2**: Execution failure - Tool error
+  - No files found matching pattern
+  - Invalid configuration file
+  - File system errors or parsing failures
+
+### Examples
+
+#### Basic Analysis
+
+```bash
+# Analyze single file
+mermaid-sonar README.md
+
+# Analyze multiple files
+mermaid-sonar README.md docs/architecture.md
+
+# Analyze directory (non-recursive)
+mermaid-sonar docs/
+
+# Analyze directory recursively
+mermaid-sonar -r docs/
+
+# Glob patterns (quote to prevent shell expansion)
+mermaid-sonar "docs/**/*.md"
+mermaid-sonar "src/**/*.{md,mdx}"
+```
+
+#### Output Formats
+
+```bash
+# JSON output for CI/CD
+mermaid-sonar --format json docs/ > report.json
+
+# Markdown report
+mermaid-sonar --format markdown -o report.md docs/
+
+# GitHub-flavored markdown
+mermaid-sonar --format github docs/
+
+# JUnit XML for test integration
+mermaid-sonar --format junit -o junit.xml docs/
+```
+
+For detailed examples and use cases for each format, see the [Output Formats Guide](./docs/output-formats.md).
+
+#### CI/CD Usage
+
+```bash
+# Strict mode - fail on any warning
+mermaid-sonar --strict docs/
+
+# Allow up to 5 warnings
+mermaid-sonar --max-warnings 5 docs/
+
+# Quiet mode for CI logs
+mermaid-sonar --quiet --format json -o report.json docs/
+
+# Verbose mode for debugging
+mermaid-sonar --verbose docs/
+```
+
+#### Configuration
+
+```bash
+# Use custom config
+mermaid-sonar --config .sonarrc.json docs/
+
+# Disable rules, show only metrics
+mermaid-sonar --no-rules docs/
+```
+
 ### CI/CD Integration
 
 #### GitHub Actions
@@ -116,6 +351,65 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - run: npx mermaid-sonar docs/
+```
+
+#### GitLab CI
+
+```yaml
+# .gitlab-ci.yml
+lint-diagrams:
+  stage: test
+  image: node:20
+  script:
+    - npx mermaid-sonar --format junit -o junit.xml docs/
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+```
+
+#### Jenkins
+
+```groovy
+// Jenkinsfile
+pipeline {
+  agent any
+  stages {
+    stage('Lint Diagrams') {
+      steps {
+        sh 'npx mermaid-sonar --format junit -o junit.xml docs/'
+        junit 'junit.xml'
+      }
+    }
+  }
+}
+```
+
+#### VS Code Tasks
+
+```json
+// .vscode/tasks.json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lint Mermaid Diagrams",
+      "type": "shell",
+      "command": "npx mermaid-sonar --format console docs/",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Generate Diagram Report",
+      "type": "shell",
+      "command": "npx mermaid-sonar --format markdown -o diagram-report.md docs/",
+      "problemMatcher": []
+    }
+  ]
+}
 ```
 
 #### Pre-commit Hook
