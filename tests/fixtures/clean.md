@@ -21,18 +21,18 @@ graph TD
     K --> L[Format]
     L --> M[Prepare Output]
     M --> N[Write Results]
-    N --> End[Complete]
+    N --> Complete[Complete]
     Error1 --> Recovery1[Log Error]
     Error2 --> Recovery2[Log Error]
     Recovery1 --> Cleanup
     Recovery2 --> Cleanup
-    Cleanup --> End
+    Cleanup --> Complete
     G --> Metrics[Update Metrics]
     Metrics --> H
     J --> Cache[Check Cache]
     Cache --> K
     N --> Notify[Send Notification]
-    Notify --> End
+    Notify --> Complete
     A --> Logger[Init Logger]
     Logger --> B
 ```

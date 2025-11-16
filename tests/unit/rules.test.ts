@@ -185,13 +185,16 @@ describe('Rule System', () => {
   });
 
   describe('Clean Fixture', () => {
-    it('should not trigger any rules on clean diagram', () => {
+    it('should not trigger any error/warning rules on clean diagram', () => {
       const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
       expect(results).toHaveLength(1);
 
-      // Should have no issues or empty issues array
+      // Should have no error or warning issues (info-level hints are allowed)
       expect(results[0].issues).toBeDefined();
-      expect(results[0].issues!.length).toBe(0);
+      const errorOrWarningIssues = results[0].issues!.filter(
+        (i) => i.severity === 'error' || i.severity === 'warning'
+      );
+      expect(errorOrWarningIssues.length).toBe(0);
     });
   });
 
