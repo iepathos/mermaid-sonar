@@ -1,7 +1,7 @@
 {
   "name": "mermaid-sonar",
   "version": "1.0.0",
-  "description": "Detect hidden complexity in Mermaid diagrams using research-backed metrics and best practices",
+  "description": "Detect complex and unreadable Mermaid diagrams using research-backed metrics and best practices",
   "keywords": [
     "mermaid",
     "diagram",
@@ -13,16 +13,16 @@
     "documentation",
     "markdown"
   ],
-  "author": "Glen <glen@example.com>",
+  "author": "Glen Baker <iepathos@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/mermaid-sonar.git"
+    "url": "https://github.com/iepathos/mermaid-sonar.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/mermaid-sonar/issues"
+    "url": "https://github.com/iepathos/mermaid-sonar/issues"
   },
-  "homepage": "https://github.com/yourusername/mermaid-sonar#readme",
+  "homepage": "https://github.com/iepathos/mermaid-sonar#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
