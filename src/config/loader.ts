@@ -41,6 +41,22 @@ function mergeConfig(userConfig: PartialConfig): Config {
         ...defaultConfig.rules['cyclomatic-complexity'],
         ...userConfig.rules?.['cyclomatic-complexity'],
       },
+      'layout-hint': {
+        ...defaultConfig.rules['layout-hint'],
+        ...userConfig.rules?.['layout-hint'],
+      },
+      'long-labels': {
+        ...defaultConfig.rules['long-labels'],
+        ...userConfig.rules?.['long-labels'],
+      },
+      'reserved-words': {
+        ...defaultConfig.rules['reserved-words'],
+        ...userConfig.rules?.['reserved-words'],
+      },
+      'disconnected-components': {
+        ...defaultConfig.rules['disconnected-components'],
+        ...userConfig.rules?.['disconnected-components'],
+      },
     },
   };
 }

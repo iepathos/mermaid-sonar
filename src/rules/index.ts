@@ -12,6 +12,10 @@ import type { Config } from '../config/types';
 import { maxEdgesRule } from './max-edges';
 import { maxNodesHighDensityRule, maxNodesLowDensityRule } from './cognitive-load';
 import { cyclomaticComplexityRule } from './cyclomatic-complexity';
+import { layoutHintRule } from './layout-hint';
+import { longLabelsRule } from './long-labels';
+import { reservedWordsRule } from './reserved-words';
+import { disconnectedRule } from './disconnected';
 
 /**
  * Registry of all available rules
@@ -21,6 +25,10 @@ const ruleRegistry = new Map<string, Rule>([
   [maxNodesHighDensityRule.name, maxNodesHighDensityRule],
   [maxNodesLowDensityRule.name, maxNodesLowDensityRule],
   [cyclomaticComplexityRule.name, cyclomaticComplexityRule],
+  [layoutHintRule.name, layoutHintRule],
+  [longLabelsRule.name, longLabelsRule],
+  [reservedWordsRule.name, reservedWordsRule],
+  [disconnectedRule.name, disconnectedRule],
 ]);
 
 /**

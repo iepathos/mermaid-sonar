@@ -32,5 +32,24 @@ export const defaultConfig: Config = {
       severity: 'warning',
       threshold: 10,
     },
+    'layout-hint': {
+      enabled: true,
+      severity: 'info',
+      minConfidence: 0.6,
+    },
+    'long-labels': {
+      enabled: true,
+      severity: 'info',
+      threshold: 40,
+    },
+    'reserved-words': {
+      enabled: true,
+      severity: 'warning',
+    },
+    'disconnected-components': {
+      enabled: true,
+      severity: 'info',
+      threshold: 2,
+    },
   },
 };
