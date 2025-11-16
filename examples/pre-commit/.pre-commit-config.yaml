@@ -1,0 +1,43 @@
+# Pre-commit hook configuration for Mermaid-Sonar
+#
+# Installation:
+#   1. Install pre-commit: pip install pre-commit
+#   2. Install hooks: pre-commit install
+#
+# Usage:
+#   Hooks run automatically on git commit
+#   Run manually: pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: mermaid-sonar
+        name: Mermaid Complexity Check
+        entry: npx mermaid-sonar
+        language: system
+        files: \.md$
+        pass_filenames: true
+        description: Analyze Mermaid diagrams for complexity issues
+
+  # Optional: Run in strict mode (fail on warnings)
+  - repo: local
+    hooks:
+      - id: mermaid-sonar-strict
+        name: Mermaid Strict Check
+        entry: npx mermaid-sonar --strict
+        language: system
+        files: \.md$
+        pass_filenames: true
+        description: Strict analysis - fail on any warnings
+        stages: [push]  # Only run on git push, not commit
+
+# Alternative: Use npx directly without local repo
+# repos:
+#   - repo: https://github.com/pre-commit/mirrors-npx
+#     rev: v1.0.0
+#     hooks:
+#       - id: npx
+#         name: Mermaid Sonar
+#         entry: npx mermaid-sonar
+#         language: node
+#         files: \.md$

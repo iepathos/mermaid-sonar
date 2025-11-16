@@ -1,0 +1,459 @@
+# Rule Catalog
+
+This document describes all complexity rules implemented in Mermaid-Sonar, their rationale, research backing, and how to configure them.
+
+## Overview
+
+Mermaid-Sonar implements six research-backed rules for detecting complexity in Mermaid diagrams:
+
+| Rule | Default Threshold | Severity | Research Basis |
+|------|------------------|----------|----------------|
+| [max-nodes](#max-nodes) | 50/100 (density-based) | error | Cognitive load research |
+| [max-edges](#max-edges) | 100 connections | warning | Mermaid O(n²) complexity |
+| [graph-density](#graph-density) | 0.3 | warning | Graph theory |
+| [cyclomatic-complexity](#cyclomatic-complexity) | 15 | warning | Software engineering |
+| [max-branch-width](#max-branch-width) | 8 parallel branches | error | Visual hierarchy |
+| [layout-hint](#layout-hint) | enabled | info | Mermaid best practices |
+
+## Rule Details
+
+### max-nodes
+
+**Description**: Flags diagrams with too many nodes based on graph density.
+
+**When it triggers**:
+- High-density graphs (density > 0.3): More than 50 nodes
+- Low-density graphs (density ≤ 0.3): More than 100 nodes
+
+**Why it matters**:
+
+Research on network visualization and cognitive load shows that humans struggle to comprehend large graphs. The threshold varies with density because dense graphs have more visual clutter:
+
+- **High-density graphs** (many connections): 50-node limit based on "[Scalability of Network Visualisation from a Cognitive Load Perspective](https://arxiv.org/abs/2008.07944)"
+- **Low-density graphs** (sparse connections): 100-node limit for tree-like structures
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  A --> B1 & B2 & B3 & B4 & B5
+  B1 --> C1 & C2 & C3
+  B2 --> C4 & C5 & C6
+  %% ... continues with 60+ total nodes
+```
+
+**How to fix**:
+
+1. **Split into multiple diagrams**: Break the diagram into logical subcomponents
+2. **Increase abstraction level**: Group related nodes into higher-level concepts
+3. **Use references**: Link between smaller diagrams instead of one large one
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "max-nodes": {
+        "enabled": true,
+        "high-density": 50,
+        "low-density": 100,
+        "density-threshold": 0.3,
+        "severity": "error"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `high-density` (number): Node limit for dense graphs (default: 50)
+- `low-density` (number): Node limit for sparse graphs (default: 100)
+- `density-threshold` (number): Density cutoff between high/low (default: 0.3)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### max-edges
+
+**Description**: Flags diagrams with too many connections (edges).
+
+**When it triggers**:
+- More than 100 connections between nodes
+
+**Why it matters**:
+
+Mermaid's layout algorithm has O(n²) complexity. According to the [Mermaid official blog](https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections):
+
+> "Flow charts are O(n²) complex, so don't go over 100 connections"
+
+Beyond 100 connections, rendering becomes slow and the diagram becomes difficult to maintain and understand.
+
+**Example that triggers the rule**:
+
+```mermaid
+flowchart LR
+  A --> B1 & B2 & B3 & B4 & B5
+  B1 --> C1 & C2 & C3 & C4
+  B2 --> C5 & C6 & C7 & C8
+  %% ... continues with 120+ edges
+```
+
+**How to fix**:
+
+1. **Reduce connections**: Remove unnecessary or redundant edges
+2. **Split diagram**: Divide into multiple focused diagrams
+3. **Increase abstraction**: Group nodes to reduce connection count
+4. **Use subgraphs**: Organize related nodes into subgraphs
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "max-edges": {
+        "enabled": true,
+        "limit": 100,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `limit` (number): Maximum allowed edges (default: 100)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### graph-density
+
+**Description**: Flags diagrams with excessive connection density.
+
+**When it triggers**:
+- Graph density exceeds 0.3 (30% of possible connections)
+
+**Formula**:
+```
+density = edges / (nodes × (nodes - 1))
+```
+
+**Why it matters**:
+
+Graph theory research shows that dense graphs (where many nodes connect to many other nodes) are harder to visualize and comprehend. A density above 0.3 indicates visual clutter that impairs readability.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  A --> B & C & D & E
+  B --> C & D & E
+  C --> D & E
+  D --> E
+  %% Every node connects to every other node (density = 1.0)
+```
+
+**How to fix**:
+
+1. **Remove redundant connections**: Keep only essential edges
+2. **Simplify relationships**: Consolidate similar connections
+3. **Use hierarchy**: Convert mesh to tree structure if possible
+4. **Split diagram**: Separate into less-connected components
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "graph-density": {
+        "enabled": true,
+        "threshold": 0.3,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `threshold` (number): Maximum density (0-1, default: 0.3)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### cyclomatic-complexity
+
+**Description**: Flags diagrams with high decision complexity.
+
+**When it triggers**:
+- Cyclomatic complexity exceeds 15
+
+**Formula**:
+```
+complexity = edges - nodes + 2
+```
+
+**Why it matters**:
+
+Cyclomatic complexity, originally defined by Thomas McCabe for code analysis, measures the number of independent paths through a structure. High complexity indicates:
+
+- Many decision points
+- Difficult to follow logic
+- Hard to test/validate
+
+Software engineering standards typically use 15 as a complexity threshold.
+
+**Example that triggers the rule**:
+
+```mermaid
+flowchart TD
+  A{Check 1} --> B{Check 2}
+  A --> C{Check 3}
+  B --> D{Check 4}
+  B --> E{Check 5}
+  C --> F{Check 6}
+  %% ... many nested decisions
+```
+
+**How to fix**:
+
+1. **Reduce branching**: Simplify decision logic
+2. **Extract sub-diagrams**: Move decision trees to separate diagrams
+3. **Use tables**: Consider decision tables for complex logic
+4. **Flatten structure**: Reduce nesting levels
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "cyclomatic-complexity": {
+        "enabled": true,
+        "limit": 15,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `limit` (number): Maximum complexity (default: 15)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### max-branch-width
+
+**Description**: Flags tree diagrams with too many parallel branches from a single node.
+
+**When it triggers**:
+- Any node has more than 8 direct children
+
+**Why it matters**:
+
+Visual hierarchy research shows that humans struggle to scan and compare more than 7±2 items simultaneously (Miller's Law). In top-down (TD) diagrams, wide branches create horizontal scanning challenges.
+
+Wide trees should use left-right (LR) layout instead, which handles horizontal expansion better.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  Root --> Child1 & Child2 & Child3 & Child4 & Child5
+        & Child6 & Child7 & Child8 & Child9 & Child10
+  %% 10 parallel branches - too many for TD layout
+```
+
+**How to fix**:
+
+1. **Use LR layout**: `graph LR` instead of `graph TD` for wide trees
+2. **Group children**: Introduce intermediate grouping nodes
+3. **Split diagram**: Separate into multiple focused views
+4. **Pagination**: Show subsets of branches
+
+**Suggested fix for wide trees**:
+
+```mermaid
+graph LR
+  Root --> Child1 & Child2 & Child3 & Child4 & Child5
+        & Child6 & Child7 & Child8 & Child9 & Child10
+  %% LR layout handles wide trees better
+```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "max-branch-width": {
+        "enabled": true,
+        "limit": 8,
+        "severity": "error"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `limit` (number): Maximum children per node (default: 8)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### layout-hint
+
+**Description**: Suggests optimal layout direction based on diagram characteristics.
+
+**When it triggers**:
+- Wide tree (max branch width > 8) using TD layout
+- Tall tree (max depth > 6) using LR layout
+
+**Why it matters**:
+
+Mermaid's layout direction significantly affects readability:
+
+- **TD (top-down)**: Best for tall, narrow hierarchies
+- **LR (left-right)**: Best for wide, shallow hierarchies
+
+Using the wrong layout wastes space and requires excessive scrolling.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  %% Wide tree - should use LR
+  A --> B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9
+```
+
+**How to fix**:
+
+Follow the suggestion to switch layout:
+
+```mermaid
+graph LR
+  %% Now properly laid out for wide tree
+  A --> B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9
+```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "layout-hint": {
+        "enabled": true,
+        "wide-threshold": 8,
+        "tall-threshold": 6,
+        "severity": "info"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `wide-threshold` (number): Branch width triggering LR suggestion (default: 8)
+- `tall-threshold` (number): Depth triggering TD suggestion (default: 6)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+## Global Configuration
+
+### Disabling Rules
+
+Disable specific rules:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "max-edges": {
+        "enabled": false
+      },
+      "layout-hint": {
+        "enabled": false
+      }
+    }
+  }
+}
+```
+
+### Adjusting Severity
+
+Change rule severity:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "max-nodes": {
+        "severity": "warning"  // Instead of error
+      },
+      "graph-density": {
+        "severity": "error"    // Instead of warning
+      }
+    }
+  }
+}
+```
+
+### Per-File Overrides
+
+Use configuration cascading to override rules for specific directories:
+
+```
+project/
+├── .sonarrc.json          # Global config
+└── legacy-docs/
+    └── .sonarrc.json      # Relaxed rules for legacy docs
+```
+
+## Research References
+
+1. **Cognitive Load and Graph Visualization**
+   - Yoghourdjian, V., et al. (2020). "Scalability of Network Visualisation from a Cognitive Load Perspective"
+   - URL: https://arxiv.org/abs/2008.07944
+
+2. **Mermaid Performance**
+   - MermaidChart Blog. "Flow charts are O(n²) complex, so don't go over 100 connections"
+   - URL: https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections
+
+3. **Cyclomatic Complexity**
+   - McCabe, T. J. (1976). "A Complexity Measure"
+   - IEEE Transactions on Software Engineering
+
+4. **Visual Perception**
+   - Miller, G. A. (1956). "The Magical Number Seven, Plus or Minus Two"
+   - Psychological Review
+
+## Contributing New Rules
+
+To propose a new rule:
+
+1. Open a GitHub issue with:
+   - Rule description and rationale
+   - Research backing (citations)
+   - Example diagrams that trigger it
+   - Suggested thresholds
+
+2. Include:
+   - Clear definition of what constitutes a violation
+   - Actionable fix suggestions
+   - Configuration options
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for implementation guidelines.

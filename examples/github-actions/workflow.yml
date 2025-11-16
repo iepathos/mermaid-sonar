@@ -1,0 +1,59 @@
+name: Lint Mermaid Diagrams
+
+# Run on pull requests and pushes to main
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.md'
+
+jobs:
+  lint-diagrams:
+    name: Analyze Diagram Complexity
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Analyze diagrams
+        run: npx mermaid-sonar docs/
+
+      - name: Generate report
+        if: always()
+        run: npx mermaid-sonar --format github docs/ > diagram-report.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('diagram-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+      - name: Upload JSON report
+        if: always()
+        run: npx mermaid-sonar --format json -o diagram-report.json docs/
+
+      - name: Upload report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagram-analysis
+          path: diagram-report.json

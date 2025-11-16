@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Lint Mermaid Diagrams",
+      "type": "shell",
+      "command": "npx mermaid-sonar --format console docs/",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Run Mermaid-Sonar analysis on docs/"
+    },
+    {
+      "label": "Lint Current File",
+      "type": "shell",
+      "command": "npx mermaid-sonar --format console ${file}",
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "detail": "Analyze Mermaid diagrams in current file"
+    },
+    {
+      "label": "Generate Diagram Report",
+      "type": "shell",
+      "command": "npx mermaid-sonar --format markdown -o diagram-report.md docs/",
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "detail": "Generate markdown report for all diagrams"
+    },
+    {
+      "label": "Strict Diagram Check",
+      "type": "shell",
+      "command": "npx mermaid-sonar --strict --max-warnings 0 docs/",
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Strict mode - fail on any warnings"
+    },
+    {
+      "label": "Watch Diagrams",
+      "type": "shell",
+      "command": "npx chokidar 'docs/**/*.md' -c 'npx mermaid-sonar --format console {path}'",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "detail": "Watch for changes and analyze diagrams automatically"
+    }
+  ]
+}

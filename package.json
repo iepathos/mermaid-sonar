@@ -1,6 +1,6 @@
 {
   "name": "mermaid-sonar",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Detect hidden complexity in Mermaid diagrams using research-backed metrics and best practices",
   "keywords": [
     "mermaid",
@@ -106,9 +106,9 @@
     "coverageThreshold": {
       "global": {
         "branches": 70,
-        "functions": 70,
-        "lines": 70,
-        "statements": 70
+        "functions": 80,
+        "lines": 90,
+        "statements": 90
       }
     }
   }
