@@ -556,7 +556,7 @@ When rules or options are deprecated, you'll see warnings:
 
 ```
 Warning: Rule 'old-rule-name' is deprecated. Use 'new-rule-name' instead.
-Migration guide: https://github.com/yourusername/mermaid-sonar/blob/main/MIGRATION.md
+Migration guide: https://github.com/iepathos/mermaid-sonar/blob/main/MIGRATION.md
 ```
 
 ## Best Practices
