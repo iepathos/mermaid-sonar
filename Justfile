@@ -35,6 +35,8 @@ fmt: format
 format-check:
     npm run format:check
 
+fmt-check: format-check
+
 typecheck:
     npm run typecheck
 
