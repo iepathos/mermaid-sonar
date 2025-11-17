@@ -23,7 +23,25 @@ The current validation system treats TD (top-down) and LR (left-right) layouts e
 - **TD diagrams**: Width determined by parallel branches (horizontal spread)
 - **LR diagrams**: Width determined by sequential chain length (depth becomes horizontal spread)
 
-A concrete example from `docs/context-lines.md:362` shows an 11-node linear chain in LR layout that creates excessive horizontal width. While the system correctly suggests LR layout for sequential patterns detected in TD diagrams, it fails to warn when LR diagrams themselves have chains that are too long.
+A concrete example from `docs/context-lines.md:362` shows an 11-node linear chain in LR layout that creates excessive horizontal width.
+
+### The Bidirectional Validation Problem
+
+The current system has two related issues that need to be addressed together:
+
+1. **TD → LR recommendation without validation**: The sequential flow pattern detector suggests "left-right layout improves readability (current: TD, suggested: LR)" for ANY sequential flow in TD diagrams, even if the chain is 15+ nodes long. This creates a new problem: recommending LR would result in an excessively wide diagram.
+
+2. **LR width validation missing**: The system doesn't warn about long horizontal chains in existing LR diagrams.
+
+**Example of the problem**:
+```mermaid
+graph TD
+  A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M
+```
+Current behavior: "Sequential flow detected - suggest LR"
+Desired behavior: NO recommendation (12+ nodes would be too wide in LR)
+
+**Critical requirement**: The TD→LR recommendation logic MUST check the chain length before suggesting LR layout. If converting to LR would exceed the horizontal threshold (8 nodes), the recommendation should be suppressed or suggest a different solution (subgraphs, TD with better organization, etc.).
 
 ### Real-World Impact
 
@@ -51,16 +69,25 @@ Implement validation rule to detect and warn about excessively long linear chain
    - **TD/TB layouts**: Warn when longest chain > 12 nodes (more tolerant of vertical chains)
    - Make thresholds configurable via rule config
 
-3. **Warning Generation**
+3. **Warning Generation for Existing LR Diagrams**
    - Rule name: `horizontal-chain-too-long`
    - Default severity: `warning`
    - Include specific chain length in message
    - Provide context about why it's problematic
 
-4. **Actionable Suggestions**
-   - Suggest TD layout conversion for long LR chains
-   - Suggest subgraph grouping for before/after patterns
-   - Suggest simplification by removing intermediate nodes
+4. **Bidirectional Validation: TD→LR Recommendation Gating**
+   - **CRITICAL**: Modify existing sequential flow pattern detector (layout-hint rule)
+   - Before suggesting TD→LR conversion, calculate chain length
+   - If chain length > 8 nodes, SUPPRESS the LR recommendation
+   - Instead, suggest:
+     - Keep TD layout but improve organization
+     - Use subgraphs to break up the long chain
+     - Consider if diagram can be simplified
+   - If chain length ≤ 8 nodes, proceed with LR recommendation as normal
+
+5. **Actionable Suggestions**
+   - For long LR chains: Suggest TD layout conversion, subgraph grouping, or simplification
+   - For long TD chains: Suggest subgraph organization or simplification (NOT LR conversion)
    - Provide example code for each suggestion
 
 ### Non-Functional Requirements
@@ -73,6 +100,7 @@ Implement validation rule to detect and warn about excessively long linear chain
 
 ## Acceptance Criteria
 
+### New Rule Implementation
 - [ ] New rule `horizontal-chain-too-long` added to rule system
 - [ ] `calculateLongestLinearChain()` algorithm implemented in `src/graph/algorithms.ts`
 - [ ] Algorithm correctly identifies linear chains (single in/out edges)
@@ -80,11 +108,26 @@ Implement validation rule to detect and warn about excessively long linear chain
 - [ ] Thresholds are configurable via rule config
 - [ ] Warning includes chain length, affected nodes, and layout direction
 - [ ] Suggestions include TD conversion, subgraph examples, and simplification options
+
+### Bidirectional Validation (TD→LR Recommendation Gating)
+- [ ] Existing `layout-hint` rule modified to call `calculateLongestLinearChain()`
+- [ ] TD diagrams with chains > 8 nodes do NOT receive LR recommendation
+- [ ] TD diagrams with chains ≤ 8 nodes continue to receive LR recommendation
+- [ ] Alternative suggestions provided for long TD chains (subgraphs, organization)
+- [ ] Test case: 12-node TD chain → NO LR suggestion
+- [ ] Test case: 6-node TD chain → LR suggestion as before
+
+### Integration & Testing
 - [ ] Rule integrates with existing validation system
 - [ ] Comprehensive unit tests for chain detection algorithm
 - [ ] Integration tests with real diagram examples from issue
+- [ ] Bidirectional validation tests (both LR warnings and TD→LR suppression)
 - [ ] Performance validated on large graphs (100+ nodes)
-- [ ] Documentation updated in README.md
+
+### Documentation
+- [ ] README.md updated with new rule documentation
+- [ ] README.md updated with bidirectional validation behavior
+- [ ] ARCHITECTURE.md documents interaction between rules
 
 ## Technical Details
 
@@ -140,10 +183,45 @@ export const horizontalChainLengthRule: Rule = {
 };
 ```
 
-**Phase 3: Integration**
+**Phase 3: Bidirectional Validation - Modify layout-hint Rule**
+```typescript
+// In src/rules/layout-hint.ts (or wherever TD→LR recommendation exists)
+import { calculateLongestLinearChain } from '../graph/algorithms';
+
+// Existing sequential flow detection logic...
+if (isSequentialFlow && layout === 'TD') {
+  // NEW: Check if converting to LR would be problematic
+  const chainAnalysis = calculateLongestLinearChain(graph);
+
+  if (chainAnalysis.length > 8) {
+    // Chain is too long for LR - suggest alternative improvements
+    return {
+      rule: 'layout-hint',
+      severity: 'info',
+      message: `Sequential flow with ${chainAnalysis.length} nodes - too long for LR conversion`,
+      suggestions: [
+        'Consider organizing into subgraphs to break up the chain',
+        'Keep TD layout but improve visual hierarchy',
+        'Simplify by removing intermediate nodes if possible'
+      ]
+    };
+  }
+
+  // Chain is short enough - proceed with LR recommendation
+  return {
+    rule: 'layout-hint',
+    severity: 'info',
+    message: 'Sequential flow pattern detected - left-right layout improves readability',
+    suggestion: 'Consider changing layout to LR'
+  };
+}
+```
+
+**Phase 4: Integration**
 - Export new rule from `src/rules/index.ts`
 - Add to default config in `src/config/defaults.ts`
 - Update types if needed in `src/graph/types.ts`
+- Ensure layout-hint rule imports and uses chain calculation
 
 ### Algorithm Design
 
@@ -276,6 +354,14 @@ export type LayoutDirection = 'LR' | 'RL' | 'TD' | 'TB';
 - Custom threshold configuration
 - Suggestion content validation
 
+**Bidirectional Validation** (`src/rules/layout-hint.test.ts`):
+- TD diagram with 12-node sequential chain → NO LR recommendation, alternative suggestions provided
+- TD diagram with 10-node sequential chain → NO LR recommendation, alternative suggestions provided
+- TD diagram with 6-node sequential chain → LR recommendation provided (normal behavior)
+- TD diagram with 8-node sequential chain → LR recommendation provided (edge case at threshold)
+- Verify alternative suggestions include subgraphs, organization, simplification
+- Verify message explains why LR not recommended ("too long for LR conversion")
+
 ### Integration Tests
 
 **Real-World Diagrams**:
@@ -396,9 +482,9 @@ Detects excessively long linear chains that create wide diagrams in horizontal l
 
 ## Example Warnings
 
-**Example 1: Long LR Chain**
+**Example 1: Long LR Chain (Direct Warning)**
 ```
-Warning: horizontal-chain-too-long at docs/example.md:10
+Warning: horizontal-chain-too-long at docs/context-lines.md:362
 
 Linear chain of 11 nodes in LR layout creates excessive width
 
@@ -416,9 +502,88 @@ graph TD
   ...
 ```
 
-**Example 2: Acceptable Chain**
+**Example 2: Long TD Chain (Bidirectional Validation - Suppressed LR Recommendation)**
+```
+Info: layout-hint at docs/sorting-results.md:17
+
+Sequential flow with 12 nodes - too long for LR conversion
+
+Chain detected: Start → NeedConsistent → UsePath → UseModified → ...
+
+Suggestions:
+1. Consider organizing into subgraphs to break up the chain
+2. Keep TD layout but improve visual hierarchy
+3. Simplify by removing intermediate nodes if possible
+
+Note: LR layout not recommended due to excessive horizontal width
+```
+
+**Example 3: Short TD Chain (Normal LR Recommendation)**
+```
+Info: layout-hint at docs/introduction.md:42
+
+Sequential flow pattern detected - left-right layout improves readability
+
+Detected patterns:
+- sequential: Spine length: 5/8 nodes (63%)
+
+Consider changing layout to LR:
+graph LR
+  Start --> Build --> Test --> Deploy --> End
+```
+
+**Example 4: Acceptable LR Chain**
 ```
 # No warning - 6 nodes is under threshold of 8 for LR
 graph LR
   Start --> Build --> Test --> Deploy --> Verify --> Done
 ```
+
+**Example 5: Short TD Chain at Threshold Edge**
+```
+# 8 nodes - exactly at threshold, LR recommendation still provided
+graph TD
+  A --> B --> C --> D --> E --> F --> G --> H
+
+Info: Sequential flow pattern detected - left-right layout improves readability
+```
+
+## Bidirectional Validation Summary
+
+This spec addresses validation in BOTH directions:
+
+### Direction 1: LR → Warning (New Rule)
+**Rule**: `horizontal-chain-too-long`
+**Trigger**: Existing LR/RL diagrams with chains > 8 nodes
+**Action**: Warn about excessive width, suggest TD conversion
+
+```
+LR diagram with 11 nodes → ⚠️  Warning: Too wide, suggest TD
+```
+
+### Direction 2: TD → LR Gating (Modified Existing Rule)
+**Rule**: `layout-hint` (modified)
+**Trigger**: TD diagrams with sequential flows
+**Action**:
+- If chain > 8 nodes: SUPPRESS LR recommendation, provide alternatives
+- If chain ≤ 8 nodes: Recommend LR as normal
+
+```
+TD diagram with 12 nodes → ℹ️  Info: Too long for LR, suggest subgraphs
+TD diagram with 6 nodes  → ℹ️  Info: Sequential flow, suggest LR
+```
+
+### Why This Matters
+
+Without bidirectional validation, the tool creates contradictory advice:
+1. User has TD diagram with 12-node chain
+2. Tool says: "Suggest LR for sequential flow"
+3. User converts to LR
+4. Tool says: "Warning: LR chain too long"
+5. User is confused and frustrated
+
+With bidirectional validation, the advice is consistent:
+1. User has TD diagram with 12-node chain
+2. Tool says: "Chain too long for LR, suggest subgraphs or organization"
+3. User improves diagram structure appropriately
+4. Result: Better diagram without contradiction
