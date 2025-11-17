@@ -247,10 +247,31 @@ describe('Pattern-based Rules', () => {
       expect(issue).toBeNull();
     });
 
-    it('should flag "End" when used as a node ID', () => {
+    it('should flag reserved words when NOT used as terminators', () => {
       const diagram: Diagram = {
         content: `graph TD
-          Start --> Process
+          start --> end
+          end --> middle
+          middle --> finish`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const metrics = analyzeStructure(diagram);
+      const config: RuleConfig = { enabled: true };
+      const issue = reservedWordsRule.check(diagram, metrics, config);
+
+      // Should detect "end" as reserved word when it has outgoing edges (not a terminator)
+      expect(issue).not.toBeNull();
+      expect(issue?.rule).toBe('reserved-words');
+      expect(issue?.message).toContain('reserved/problematic');
+    });
+
+    it('should NOT flag "End" when used as flowchart terminator (stadium shape)', () => {
+      const diagram: Diagram = {
+        content: `graph TD
+          Start([Begin]) --> Process
           Process --> End([Complete])`,
         startLine: 1,
         filePath: 'test.md',
@@ -261,10 +282,27 @@ describe('Pattern-based Rules', () => {
       const config: RuleConfig = { enabled: true };
       const issue = reservedWordsRule.check(diagram, metrics, config);
 
-      // Should detect "End" as a reserved word used as node ID
-      expect(issue).not.toBeNull();
-      expect(issue?.rule).toBe('reserved-words');
-      expect(issue?.message).toContain('reserved/problematic');
+      // Should be null because Start/End use terminator shapes
+      expect(issue).toBeNull();
+    });
+
+    it('should NOT flag "End" when used as sink node (no outgoing edges)', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> B
+          B --> End[Display Only]
+          C --> End`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const metrics = analyzeStructure(diagram);
+      const config: RuleConfig = { enabled: true };
+      const issue = reservedWordsRule.check(diagram, metrics, config);
+
+      // Should be null because End has no outgoing edges (sink node)
+      expect(issue).toBeNull();
     });
 
     it('should NOT flag "class" or "click" directives', () => {

@@ -115,6 +115,51 @@ function hasProblematicPattern(nodeId: string): boolean {
 }
 
 /**
+ * Detects if a reserved word is used as a flowchart terminator node
+ *
+ * Terminator nodes are conventional in flowcharts and typically:
+ * - Use stadium/pill shapes: ([label]) or ((label))
+ * - Are named Start, End, Begin, or Complete
+ * - Have no outgoing edges (sink nodes) or only incoming edges (source nodes)
+ *
+ * @param nodeId - Node ID to check
+ * @param content - Full diagram content
+ * @returns True if this is likely a terminator node
+ */
+function isFlowchartTerminator(nodeId: string, content: string): boolean {
+  const lower = nodeId.toLowerCase();
+
+  // Common terminator names
+  const terminatorNames = new Set(['start', 'end', 'begin', 'complete', 'finish', 'done']);
+
+  if (!terminatorNames.has(lower)) {
+    return false;
+  }
+
+  // Check if used with terminator shapes: ([...]) or ((...)
+  // Match patterns like: End([Complete]) or Start([Begin])
+  const terminatorShapePattern = new RegExp(
+    `\\b${nodeId}\\s*\\(\\([^)]+\\)\\)|\\b${nodeId}\\s*\\([^)]+\\)`,
+    'i'
+  );
+
+  if (terminatorShapePattern.test(content)) {
+    return true;
+  }
+
+  // Check if this is a sink node (only appears on right side of edges, never on left)
+  // This catches nodes like: End[Display Only] that are targets but never sources
+  const hasOutgoingEdges = new RegExp(`\\b${nodeId}\\s*-->`, 'i').test(content);
+
+  // Node appears in the diagram but has no outgoing edges = sink node = likely terminator
+  if (!hasOutgoingEdges && content.includes(nodeId)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Reserved words rule
  *
  * Detects reserved words and problematic node ID patterns.
@@ -127,7 +172,15 @@ export const reservedWordsRule: Rule = {
     const severity = config.severity ?? this.defaultSeverity;
 
     const nodeIds = extractNodeIds(diagram.content);
-    const reserved = nodeIds.filter(isReservedWord);
+
+    // Filter out reserved words that are used as flowchart terminators
+    const reserved = nodeIds.filter((id) => {
+      if (!isReservedWord(id)) return false;
+      // Allow reserved words if they're used as conventional terminators
+      if (isFlowchartTerminator(id, diagram.content)) return false;
+      return true;
+    });
+
     const problematic = nodeIds.filter(hasProblematicPattern);
 
     const issues: string[] = [];
