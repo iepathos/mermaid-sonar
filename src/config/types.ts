@@ -12,6 +12,7 @@ import type { RuleConfig } from '../rules/types';
 export interface Config {
   /** Rule configurations */
   rules: {
+    'syntax-validation': RuleConfig;
     'max-edges': RuleConfig;
     'max-nodes-high-density': RuleConfig;
     'max-nodes-low-density': RuleConfig;

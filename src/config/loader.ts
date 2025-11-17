@@ -25,6 +25,10 @@ const explorer = cosmiconfig('sonar', {
 function mergeConfig(userConfig: PartialConfig): Config {
   return {
     rules: {
+      'syntax-validation': {
+        ...defaultConfig.rules['syntax-validation'],
+        ...userConfig.rules?.['syntax-validation'],
+      },
       'max-edges': {
         ...defaultConfig.rules['max-edges'],
         ...userConfig.rules?.['max-edges'],

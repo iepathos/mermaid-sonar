@@ -11,6 +11,10 @@ import type { Config } from './types';
  */
 export const defaultConfig: Config = {
   rules: {
+    'syntax-validation': {
+      enabled: true,
+      severity: 'error',
+    },
     'max-edges': {
       enabled: true,
       severity: 'error',

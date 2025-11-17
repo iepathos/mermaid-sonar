@@ -11,8 +11,8 @@ import type { Config } from '../../src/config';
 
 describe('Rule System', () => {
   describe('Max Edges Rule', () => {
-    it('should trigger on diagrams with >100 edges', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
+    it('should trigger on diagrams with >100 edges', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
       expect(results).toHaveLength(1);
       expect(results[0].issues).toBeDefined();
       expect(results[0].issues!.length).toBeGreaterThan(0);
@@ -23,15 +23,15 @@ describe('Rule System', () => {
       expect(maxEdgeIssue!.message).toContain('Too many connections');
     });
 
-    it('should not trigger on clean diagrams', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
+    it('should not trigger on clean diagrams', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/clean.md');
       expect(results).toHaveLength(1);
 
       const maxEdgeIssue = results[0].issues?.find((i) => i.rule === 'max-edges');
       expect(maxEdgeIssue).toBeUndefined();
     });
 
-    it('should respect custom threshold', () => {
+    it('should respect custom threshold', async () => {
       const diagrams = extractDiagramsFromFile('tests/fixtures/clean.md');
       const metrics = analyzeStructure(diagrams[0]);
 
@@ -47,7 +47,7 @@ describe('Rule System', () => {
         },
       };
 
-      const issues = runRules(diagrams[0], metrics, customConfig);
+      const issues = await runRules(diagrams[0], metrics, customConfig);
       const maxEdgeIssue = issues.find((i) => i.rule === 'max-edges');
 
       expect(maxEdgeIssue).toBeDefined();
@@ -56,7 +56,7 @@ describe('Rule System', () => {
   });
 
   describe('High-Density Cognitive Load Rule', () => {
-    it('should trigger on high-density diagrams with >50 nodes', () => {
+    it('should trigger on high-density diagrams with >50 nodes', async () => {
       // Use lower thresholds for testing since creating a true high-density
       // diagram with >50 nodes is impractical (would need 750+ edges)
       const diagrams = extractDiagramsFromFile('tests/fixtures/high-density.md');
@@ -75,7 +75,7 @@ describe('Rule System', () => {
         },
       };
 
-      const issues = runRules(diagrams[0], metrics, customConfig);
+      const issues = await runRules(diagrams[0], metrics, customConfig);
       const highDensityIssue = issues.find((i) => i.rule === 'max-nodes-high-density');
 
       expect(highDensityIssue).toBeDefined();
@@ -83,8 +83,8 @@ describe('Rule System', () => {
       expect(highDensityIssue!.message).toContain('High cognitive load');
     });
 
-    it('should not trigger on clean diagrams', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
+    it('should not trigger on clean diagrams', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/clean.md');
 
       const highDensityIssue = results[0].issues?.find((i) => i.rule === 'max-nodes-high-density');
       expect(highDensityIssue).toBeUndefined();
@@ -92,8 +92,8 @@ describe('Rule System', () => {
   });
 
   describe('Low-Density Cognitive Load Rule', () => {
-    it('should trigger on low-density diagrams with >100 nodes', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/low-density.md');
+    it('should trigger on low-density diagrams with >100 nodes', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/low-density.md');
       expect(results).toHaveLength(1);
 
       const lowDensityIssue = results[0].issues?.find((i) => i.rule === 'max-nodes-low-density');
@@ -102,8 +102,8 @@ describe('Rule System', () => {
       expect(lowDensityIssue!.message).toContain('Too many nodes');
     });
 
-    it('should not trigger on clean diagrams', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
+    it('should not trigger on clean diagrams', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/clean.md');
 
       const lowDensityIssue = results[0].issues?.find((i) => i.rule === 'max-nodes-low-density');
       expect(lowDensityIssue).toBeUndefined();
@@ -111,8 +111,8 @@ describe('Rule System', () => {
   });
 
   describe('Cyclomatic Complexity Rule', () => {
-    it('should trigger on diagrams with >10 decision nodes', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/complex-decisions.md');
+    it('should trigger on diagrams with >10 decision nodes', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/complex-decisions.md');
       expect(results).toHaveLength(1);
 
       const cyclomaticIssue = results[0].issues?.find((i) => i.rule === 'cyclomatic-complexity');
@@ -121,15 +121,15 @@ describe('Rule System', () => {
       expect(cyclomaticIssue!.message).toContain('cyclomatic complexity');
     });
 
-    it('should not trigger on clean diagrams with few decisions', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
+    it('should not trigger on clean diagrams with few decisions', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/clean.md');
 
       const cyclomaticIssue = results[0].issues?.find((i) => i.rule === 'cyclomatic-complexity');
       expect(cyclomaticIssue).toBeUndefined();
     });
 
-    it('should calculate complexity correctly', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/complex-decisions.md');
+    it('should calculate complexity correctly', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/complex-decisions.md');
       const cyclomaticIssue = results[0].issues?.find((i) => i.rule === 'cyclomatic-complexity');
 
       // Should have 12 decision nodes -> complexity = 13
@@ -138,7 +138,7 @@ describe('Rule System', () => {
   });
 
   describe('Configuration', () => {
-    it('should disable rules when configured', () => {
+    it('should disable rules when configured', async () => {
       const diagrams = extractDiagramsFromFile('tests/fixtures/too-many-edges.md');
       const metrics = analyzeStructure(diagrams[0]);
 
@@ -154,13 +154,13 @@ describe('Rule System', () => {
         },
       };
 
-      const issues = runRules(diagrams[0], metrics, customConfig);
+      const issues = await runRules(diagrams[0], metrics, customConfig);
       const maxEdgeIssue = issues.find((i) => i.rule === 'max-edges');
 
       expect(maxEdgeIssue).toBeUndefined();
     });
 
-    it('should override severity levels', () => {
+    it('should override severity levels', async () => {
       const diagrams = extractDiagramsFromFile('tests/fixtures/too-many-edges.md');
       const metrics = analyzeStructure(diagrams[0]);
 
@@ -176,7 +176,7 @@ describe('Rule System', () => {
         },
       };
 
-      const issues = runRules(diagrams[0], metrics, customConfig);
+      const issues = await runRules(diagrams[0], metrics, customConfig);
       const maxEdgeIssue = issues.find((i) => i.rule === 'max-edges');
 
       expect(maxEdgeIssue).toBeDefined();
@@ -185,8 +185,8 @@ describe('Rule System', () => {
   });
 
   describe('Clean Fixture', () => {
-    it('should not trigger any error rules on clean diagram', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/clean.md');
+    it('should not trigger any error rules on clean diagram', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/clean.md');
       expect(results).toHaveLength(1);
 
       // Should have no errors (readability warnings are acceptable)
@@ -197,8 +197,8 @@ describe('Rule System', () => {
   });
 
   describe('Issue Format', () => {
-    it('should include all required fields in issues', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
+    it('should include all required fields in issues', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
       const issue = results[0].issues![0];
 
       expect(issue.rule).toBeDefined();
@@ -208,8 +208,8 @@ describe('Rule System', () => {
       expect(issue.line).toBeDefined();
     });
 
-    it('should include suggestion and citation', () => {
-      const results = analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
+    it('should include suggestion and citation', async () => {
+      const results = await analyzeDiagramFileWithRules('tests/fixtures/too-many-edges.md');
       const maxEdgeIssue = results[0].issues!.find((i) => i.rule === 'max-edges');
 
       expect(maxEdgeIssue!.suggestion).toBeDefined();

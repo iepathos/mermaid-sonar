@@ -61,20 +61,25 @@ export function analyzeDiagramFile(filePath: string): AnalysisResult[] {
  *
  * @param filePath - Path to markdown file
  * @param config - Optional configuration (defaults loaded from file system)
- * @returns Array of analysis results with issues
+ * @returns Promise of array of analysis results with issues
  */
-export function analyzeDiagramFileWithRules(filePath: string, config?: Config): AnalysisResult[] {
+export async function analyzeDiagramFileWithRules(
+  filePath: string,
+  config?: Config
+): Promise<AnalysisResult[]> {
   const diagrams = extractDiagramsFromFile(filePath);
   const resolvedConfig = config ?? loadConfigSync();
 
-  return diagrams.map((diagram) => {
-    const metrics = analyzeStructure(diagram);
-    const issues = runRules(diagram, metrics, resolvedConfig);
+  return Promise.all(
+    diagrams.map(async (diagram) => {
+      const metrics = analyzeStructure(diagram);
+      const issues = await runRules(diagram, metrics, resolvedConfig);
 
-    return {
-      diagram,
-      metrics,
-      issues,
-    };
-  });
+      return {
+        diagram,
+        metrics,
+        issues,
+      };
+    })
+  );
 }

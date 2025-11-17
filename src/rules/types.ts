@@ -57,8 +57,12 @@ export interface Rule {
   defaultSeverity: Severity;
   /** Default threshold value (if applicable) */
   defaultThreshold?: number;
-  /** Check if rule is violated */
-  check(diagram: Diagram, metrics: Metrics, config: RuleConfig): Issue | null;
+  /** Check if rule is violated (supports both sync and async) */
+  check(
+    diagram: Diagram,
+    metrics: Metrics,
+    config: RuleConfig
+  ): Issue | null | Promise<Issue | null>;
 }
 
 /**

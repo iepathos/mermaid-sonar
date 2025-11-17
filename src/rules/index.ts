@@ -16,11 +16,13 @@ import { layoutHintRule } from './layout-hint';
 import { longLabelsRule } from './long-labels';
 import { reservedWordsRule } from './reserved-words';
 import { disconnectedRule } from './disconnected';
+import { syntaxValidationRule } from './syntax-validation';
 
 /**
  * Registry of all available rules
  */
 const ruleRegistry = new Map<string, Rule>([
+  [syntaxValidationRule.name, syntaxValidationRule], // Run syntax validation first (fail fast)
   [maxEdgesRule.name, maxEdgesRule],
   [maxNodesHighDensityRule.name, maxNodesHighDensityRule],
   [maxNodesLowDensityRule.name, maxNodesLowDensityRule],
@@ -56,9 +58,13 @@ export function getAllRules(): Rule[] {
  * @param diagram - Diagram to check
  * @param metrics - Pre-calculated metrics
  * @param config - Configuration with rule settings
- * @returns Array of issues found
+ * @returns Promise of array of issues found
  */
-export function runRules(diagram: Diagram, metrics: Metrics, config: Config): Issue[] {
+export async function runRules(
+  diagram: Diagram,
+  metrics: Metrics,
+  config: Config
+): Promise<Issue[]> {
   const issues: Issue[] = [];
 
   for (const [ruleName, rule] of ruleRegistry) {
@@ -69,7 +75,8 @@ export function runRules(diagram: Diagram, metrics: Metrics, config: Config): Is
       continue;
     }
 
-    const issue = rule.check(diagram, metrics, ruleConfig);
+    // Support both sync and async rules
+    const issue = await rule.check(diagram, metrics, ruleConfig);
 
     if (issue) {
       issues.push(issue);

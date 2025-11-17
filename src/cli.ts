@@ -69,8 +69,8 @@ async function runCLI(files: string[], options: CLIOptions): Promise<number> {
     for (const filePath of filePaths) {
       try {
         const results = options.noRules
-          ? analyzeDiagramFileWithRules(filePath, config).map((r) => ({ ...r, issues: [] }))
-          : analyzeDiagramFileWithRules(filePath, config);
+          ? (await analyzeDiagramFileWithRules(filePath, config)).map((r) => ({ ...r, issues: [] }))
+          : await analyzeDiagramFileWithRules(filePath, config);
 
         allResults.push(...results);
       } catch (error) {

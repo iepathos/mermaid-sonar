@@ -13,7 +13,7 @@ import type { RuleConfig } from '../../src/rules/types';
 
 describe('Pattern-based Rules', () => {
   describe('Layout Hint Rule', () => {
-    it('should suggest LR for sequential pattern', () => {
+    it('should suggest LR for sequential pattern', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A --> B
@@ -28,14 +28,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = layoutHintRule.check(diagram, metrics, config);
+      const issue = await layoutHintRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
       expect(issue?.rule).toBe('layout-hint');
       expect(issue?.severity).toBe('warning');
     });
 
-    it('should not suggest if current matches recommended', () => {
+    it('should not suggest if current matches recommended', async () => {
       const diagram: Diagram = {
         content: `graph LR
           A --> B --> C --> D --> E`,
@@ -46,12 +46,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = layoutHintRule.check(diagram, metrics, config);
+      const issue = await layoutHintRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
 
-    it('should respect minConfidence threshold', () => {
+    it('should respect minConfidence threshold', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A --> B
@@ -65,14 +65,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, minConfidence: 0.9 };
-      const issue = layoutHintRule.check(diagram, metrics, config);
+      const issue = await layoutHintRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
   });
 
   describe('Long Labels Rule', () => {
-    it('should detect labels exceeding threshold', () => {
+    it('should detect labels exceeding threshold', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A[This is a very long label that exceeds the recommended character limit for readability]
@@ -85,14 +85,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 40 };
-      const issue = longLabelsRule.check(diagram, metrics, config);
+      const issue = await longLabelsRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
       expect(issue?.rule).toBe('long-labels');
       expect(issue?.message).toContain('1 node');
     });
 
-    it('should not flag short labels', () => {
+    it('should not flag short labels', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A[Start]
@@ -106,12 +106,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 40 };
-      const issue = longLabelsRule.check(diagram, metrics, config);
+      const issue = await longLabelsRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
 
-    it('should respect custom threshold', () => {
+    it('should respect custom threshold', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A[Medium length label here]
@@ -123,14 +123,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 15 };
-      const issue = longLabelsRule.check(diagram, metrics, config);
+      const issue = await longLabelsRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
     });
   });
 
   describe('Reserved Words Rule', () => {
-    it('should detect reserved word "end"', () => {
+    it('should detect reserved word "end"', async () => {
       const diagram: Diagram = {
         content: `graph TD
           start --> end
@@ -142,14 +142,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
       expect(issue?.rule).toBe('reserved-words');
       expect(issue?.severity).toBe('warning');
     });
 
-    it('should detect problematic o123 pattern', () => {
+    it('should detect problematic o123 pattern', async () => {
       const diagram: Diagram = {
         content: `graph TD
           o123 --> o456
@@ -161,12 +161,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
     });
 
-    it('should detect problematic x123 pattern', () => {
+    it('should detect problematic x123 pattern', async () => {
       const diagram: Diagram = {
         content: `graph TD
           x123 --> x456`,
@@ -177,12 +177,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
     });
 
-    it('should not flag normal node IDs', () => {
+    it('should not flag normal node IDs', async () => {
       const diagram: Diagram = {
         content: `graph TD
           start --> process
@@ -194,12 +194,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
 
-    it('should NOT flag "style" when used as a directive (not node ID)', () => {
+    it('should NOT flag "style" when used as a directive (not node ID)', async () => {
       const diagram: Diagram = {
         content: `graph TD
           Filter[File Filter] --> Match{Match?}
@@ -214,13 +214,13 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should be null because "style" is a directive, not a node ID
       expect(issue).toBeNull();
     });
 
-    it('should NOT flag "end" when used as subgraph closer (not node ID)', () => {
+    it('should NOT flag "end" when used as subgraph closer (not node ID)', async () => {
       const diagram: Diagram = {
         content: `graph TD
           subgraph "Before Merge"
@@ -241,13 +241,13 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should be null because "end" closes subgraphs, not used as node ID
       expect(issue).toBeNull();
     });
 
-    it('should flag reserved words when NOT used as terminators', () => {
+    it('should flag reserved words when NOT used as terminators', async () => {
       const diagram: Diagram = {
         content: `graph TD
           start --> end
@@ -260,7 +260,7 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should detect "end" as reserved word when it has outgoing edges (not a terminator)
       expect(issue).not.toBeNull();
@@ -268,7 +268,7 @@ describe('Pattern-based Rules', () => {
       expect(issue?.message).toContain('reserved/problematic');
     });
 
-    it('should NOT flag "End" when used as flowchart terminator (stadium shape)', () => {
+    it('should NOT flag "End" when used as flowchart terminator (stadium shape)', async () => {
       const diagram: Diagram = {
         content: `graph TD
           Start([Begin]) --> Process
@@ -280,13 +280,13 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should be null because Start/End use terminator shapes
       expect(issue).toBeNull();
     });
 
-    it('should NOT flag "End" when used as sink node (no outgoing edges)', () => {
+    it('should NOT flag "End" when used as sink node (no outgoing edges)', async () => {
       const diagram: Diagram = {
         content: `graph LR
           A --> B
@@ -299,13 +299,13 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should be null because End has no outgoing edges (sink node)
       expect(issue).toBeNull();
     });
 
-    it('should NOT flag "class" or "click" directives', () => {
+    it('should NOT flag "class" or "click" directives', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A[Node A] --> B[Node B]
@@ -318,7 +318,7 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true };
-      const issue = reservedWordsRule.check(diagram, metrics, config);
+      const issue = await reservedWordsRule.check(diagram, metrics, config);
 
       // Should be null because "class" and "click" are directives
       expect(issue).toBeNull();
@@ -326,7 +326,7 @@ describe('Pattern-based Rules', () => {
   });
 
   describe('Disconnected Components Rule', () => {
-    it('should detect multiple disconnected graphs', () => {
+    it('should detect multiple disconnected graphs', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A --> B
@@ -339,14 +339,14 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 2 };
-      const issue = disconnectedRule.check(diagram, metrics, config);
+      const issue = await disconnectedRule.check(diagram, metrics, config);
 
       expect(issue).not.toBeNull();
       expect(issue?.rule).toBe('disconnected-components');
       expect(issue?.message).toContain('3 disconnected');
     });
 
-    it('should not flag single connected graph', () => {
+    it('should not flag single connected graph', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A --> B
@@ -359,12 +359,12 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 2 };
-      const issue = disconnectedRule.check(diagram, metrics, config);
+      const issue = await disconnectedRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
 
-    it('should respect threshold', () => {
+    it('should respect threshold', async () => {
       const diagram: Diagram = {
         content: `graph TD
           A --> B
@@ -376,7 +376,7 @@ describe('Pattern-based Rules', () => {
 
       const metrics = analyzeStructure(diagram);
       const config: RuleConfig = { enabled: true, threshold: 3 };
-      const issue = disconnectedRule.check(diagram, metrics, config);
+      const issue = await disconnectedRule.check(diagram, metrics, config);
 
       expect(issue).toBeNull();
     });
