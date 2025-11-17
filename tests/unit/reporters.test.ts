@@ -118,6 +118,44 @@ describe('ConsoleReporter', () => {
     expect(output).toContain('1 diagram');
     expect(output).toContain('1 error');
   });
+
+  it('should show line numbers for diagrams with no issues', () => {
+    const resultsWithNoIssues: AnalysisResult[] = [
+      {
+        diagram: {
+          content: 'graph TD\n  A-->B',
+          startLine: 42,
+          filePath: 'clean.md',
+          type: 'graph',
+        },
+        metrics: {
+          nodeCount: 2,
+          edgeCount: 1,
+          graphDensity: 0.5,
+          maxBranchWidth: 1,
+          averageDegree: 1.0,
+        },
+        issues: [],
+      },
+    ];
+
+    const summary: Summary = {
+      filesAnalyzed: 1,
+      diagramsAnalyzed: 1,
+      totalIssues: 0,
+      errorCount: 0,
+      warningCount: 0,
+      infoCount: 0,
+      duration: 50,
+    };
+
+    const reporter = new ConsoleReporter();
+    const output = reporter.format(resultsWithNoIssues, summary);
+
+    expect(output).toContain('clean.md');
+    expect(output).toContain('42:1');
+    expect(output).toContain('✓ No issues found');
+  });
 });
 
 describe('JSONReporter', () => {

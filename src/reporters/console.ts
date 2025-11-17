@@ -30,7 +30,8 @@ export class ConsoleReporter implements Reporter {
             output.push(this.formatIssue(issue));
           }
         } else {
-          output.push(chalk.green('  ✓ No issues found'));
+          const line = `${result.diagram.startLine}:1`;
+          output.push(chalk.green(`  ${line}  ✓ No issues found`));
         }
       }
 
