@@ -52,10 +52,14 @@
     "commander": "^14.0.2",
     "cosmiconfig": "^9.0.0",
     "glob": "^11.0.3",
+    "happy-dom": "^20.0.10",
+    "isomorphic-dompurify": "^2.32.0",
     "mermaid": "^10.9.5"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/jest": "^30.0.0",
+    "@types/jsdom": "^27.0.0",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",

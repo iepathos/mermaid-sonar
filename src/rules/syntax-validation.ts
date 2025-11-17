@@ -5,22 +5,57 @@
  * Detects parse errors, invalid syntax, and unsupported features.
  */
 
-import mermaid from 'mermaid';
+import { Window } from 'happy-dom';
+import createDOMPurify from 'isomorphic-dompurify';
 import type { Rule, Issue, RuleConfig } from './types';
 import type { Diagram } from '../extractors/types';
 import type { Metrics } from '../analyzers/types';
 
+// Dynamically imported mermaid instance
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mermaid: any = null;
+
 // Initialize Mermaid parser once
 let parserInitialized = false;
 
-function initializeMermaidParser(): void {
+/**
+ * Injects DOM polyfill into global context for Mermaid to work in Node.js
+ * Based on https://github.com/mermaid-js/mermaid/issues/5204
+ */
+function injectDOMPolyfill(context: typeof globalThis): void {
+  const window = new Window();
+
+  // Copy all window properties to global context
+  for (const key of Object.getOwnPropertyNames(window)) {
+    if (key in context) continue;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (context as any)[key] = (window as any)[key];
+    } catch (error) {
+      // Some properties are read-only and will throw
+    }
+  }
+
+  // Set up DOMPurify for the global context
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (context as any).DOMPurify = createDOMPurify(window as unknown as Window);
+}
+
+async function initializeMermaidParser(): Promise<void> {
   if (parserInitialized) {
     return;
   }
 
+  // Setup DOM polyfill BEFORE importing mermaid
+  injectDOMPolyfill(globalThis);
+
+  // Dynamically import mermaid after setting up globals
+  const mermaidModule = await import('mermaid');
+  mermaid = mermaidModule.default;
+
   mermaid.initialize({
     startOnLoad: false,
-    securityLevel: 'strict',
+    securityLevel: 'loose', // Required for Node.js
     logLevel: 'error',
   });
 
@@ -72,8 +107,8 @@ export const syntaxValidationRule: Rule = {
   async check(diagram: Diagram, _metrics: Metrics, config: RuleConfig): Promise<Issue | null> {
     const severity = config.severity ?? this.defaultSeverity;
 
-    // Initialize parser on first use
-    initializeMermaidParser();
+    // Initialize parser on first use (await because it's async now)
+    await initializeMermaidParser();
 
     try {
       // Parse diagram using Mermaid parser
