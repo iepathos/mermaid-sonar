@@ -31,7 +31,7 @@ function injectDOMPolyfill(context: typeof globalThis): void {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (context as any)[key] = (window as any)[key];
-    } catch (error) {
+    } catch {
       // Some properties are read-only and will throw
     }
   }
