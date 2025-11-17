@@ -4,7 +4,7 @@ This document describes all complexity rules implemented in Mermaid-Sonar, their
 
 ## Overview
 
-Mermaid-Sonar implements seven research-backed rules for detecting complexity in Mermaid diagrams:
+Mermaid-Sonar implements eight research-backed rules for detecting complexity in Mermaid diagrams:
 
 | Rule | Default Threshold | Severity | Research Basis |
 |------|------------------|----------|----------------|
@@ -15,6 +15,7 @@ Mermaid-Sonar implements seven research-backed rules for detecting complexity in
 | [max-branch-width](#max-branch-width) | 8 parallel branches | error | Visual hierarchy |
 | [layout-hint](#layout-hint) | enabled | info | Mermaid best practices |
 | [horizontal-chain-too-long](#horizontal-chain-too-long) | LR: 8, TD: 12 | warning | Viewport constraints & UX |
+| [horizontal-width-readability](#horizontal-width-readability) | 1200px target | warning | Viewport constraints & UX |
 
 ## Rule Details
 
@@ -474,6 +475,145 @@ graph TD
 - `thresholds.LR` (number): Maximum chain length for LR/RL layouts (default: 8)
 - `thresholds.TD` (number): Maximum chain length for TD/TB layouts (default: 12)
 - `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### horizontal-width-readability
+
+**Description**: Detects diagrams that will be too wide for standard viewports due to the combination of layout direction, node count, branching, and label length.
+
+**When it triggers**:
+- Estimated diagram width exceeds viewport thresholds based on:
+  - **For LR/RL layouts**: Sequential nodes multiplied by average label length
+  - **For TD/TB layouts**: Parallel branch width multiplied by average label length
+- Three severity levels:
+  - **Info**: Width ≥ 1500px
+  - **Warning**: Width ≥ 2000px
+  - **Error**: Width ≥ 2500px
+
+**Why it matters**:
+
+Excessive diagram width creates poor user experience regardless of layout direction:
+
+- **Horizontal scrolling breaks UX**: Unlike vertical scrolling which is natural and expected, horizontal scrolling disrupts reading flow and comprehension
+- **Text becomes illegibly small**: Wide diagrams must be scaled down to fit viewports (typically 1280-1920px)
+- **Mobile/tablet unusable**: Wide diagrams are completely inaccessible on smaller screens
+- **Combination effect**: This rule detects problems that occur when multiple factors combine (many nodes + long labels + layout direction) even when individual rules don't trigger
+
+**Real-world example**: The ripgrep documentation's "overlapping matches" diagram demonstrates this issue - an LR layout with many nodes and long labels makes text illegibly small when scaled to fit viewports.
+
+**Example that triggers the rule (LR layout)**:
+
+```mermaid
+graph LR
+  M1[Match 1: Long descriptive label] --> C1[Context line 1]
+  C1 --> SEP1[Separator line with details]
+  SEP1 --> C2[Context line 2] --> M2[Match 2: Another verbose label]
+  M2 --> C3[Context line 3] --> M1A[Match 1 again]
+  M1A --> C1A[Context again] --> OVER[Overlapping region description]
+  %% Estimated width: 2400px (exceeds 1200px safe limit)
+```
+
+**Example that triggers the rule (TD layout with wide branches)**:
+
+```mermaid
+graph TD
+  Root[Main Process] --> Branch1[First Long Description Branch]
+  Root --> Branch2[Second Long Description Branch]
+  Root --> Branch3[Third Long Description Branch]
+  Root --> Branch4[Fourth Long Description Branch]
+  Root --> Branch5[Fifth Long Description Branch]
+  Root --> Branch6[Sixth Long Description Branch]
+  Root --> Branch7[Seventh Long Description Branch]
+  Root --> Branch8[Eighth Long Description Branch]
+  %% Estimated width: 2800px due to parallel branches
+```
+
+**How to fix**:
+
+**For LR/RL layouts** (sequential width issue):
+1. **Convert to TD layout** for better vertical scrolling:
+   ```mermaid
+   graph TD
+     M1[Match 1] --> C1[Context 1]
+     C1 --> SEP1[Separator]
+     SEP1 --> C2[Context 2]
+   ```
+
+2. **Break into multiple diagrams**:
+   ```mermaid
+   graph LR
+     %% Phase 1
+     M1[Match 1] --> C1[Context] --> SEP1[Sep]
+   ```
+   ```mermaid
+   graph LR
+     %% Phase 2
+     SEP1[Sep] --> C2[Context] --> M2[Match 2]
+   ```
+
+**For TD/TB layouts** (branching width issue):
+1. **Group branches into subgraphs**:
+   ```mermaid
+   graph TD
+     Root --> Group1[Group A]
+     Root --> Group2[Group B]
+
+     subgraph Group1
+       Branch1 & Branch2 & Branch3
+     end
+
+     subgraph Group2
+       Branch4 & Branch5 & Branch6
+     end
+   ```
+
+2. **Split into focused diagrams**: Create separate diagrams for different aspects
+
+**Common fixes for all layouts**:
+1. **Use shorter labels**: Replace "First Long Description Branch" with "Branch 1" or "B1"
+2. **Use abbreviations with legend**: Define abbreviations once, use throughout diagram
+3. **Introduce intermediate nodes**: Group related concepts under summary nodes
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "horizontal-width-readability": {
+        "enabled": true,
+        "targetWidth": 1200,
+        "thresholds": {
+          "info": 1500,
+          "warning": 2000,
+          "error": 2500
+        },
+        "charWidth": 8,
+        "nodeSpacing": 50,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `targetWidth` (number): Safe viewport width in pixels (default: 1200)
+- `thresholds.info` (number): Width triggering info severity (default: 1500)
+- `thresholds.warning` (number): Width triggering warning severity (default: 2000)
+- `thresholds.error` (number): Width triggering error severity (default: 2500)
+- `charWidth` (number): Estimated pixels per character (default: 8)
+- `nodeSpacing` (number): Mermaid node spacing in pixels (default: 50)
+- `severity` ("error" | "warning" | "info"): Override severity for all violations
+
+**How width is calculated**:
+
+- **LR/RL layouts**: `nodeCount × avgLabelLength × charWidth + nodeCount × nodeSpacing`
+- **TD/TB layouts**: `maxBranchWidth × avgLabelLength × charWidth + maxBranchWidth × nodeSpacing`
+
+This is an approximation that doesn't require actual rendering, providing fast feedback during development.
 
 ---
 
