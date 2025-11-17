@@ -46,8 +46,10 @@ export const layoutHintRule: Rule = {
 
     // BIDIRECTIONAL VALIDATION: Check if recommending LR for a TD diagram
     // If chain is too long, suppress LR recommendation and suggest alternatives
-    const isRecommendingLR = recommendation.recommended === 'LR' || recommendation.recommended === 'RL';
-    const currentIsTD = !recommendation.current || recommendation.current === 'TD' || recommendation.current === 'TB';
+    const isRecommendingLR =
+      recommendation.recommended === 'LR' || recommendation.recommended === 'RL';
+    const currentIsTD =
+      !recommendation.current || recommendation.current === 'TD' || recommendation.current === 'TB';
 
     if (isRecommendingLR && currentIsTD) {
       const chainAnalysis = calculateLongestLinearChain(graph);

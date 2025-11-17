@@ -224,10 +224,7 @@ export function hasCycles(graph: GraphRepresentation): boolean {
 /**
  * Checks if a node is linear (≤1 parent and ≤1 child)
  */
-function isLinearNode(
-  node: string,
-  graph: GraphRepresentation
-): boolean {
+function isLinearNode(node: string, graph: GraphRepresentation): boolean {
   const parents = graph.reverseAdjacencyList.get(node) || [];
   const children = graph.adjacencyList.get(node) || [];
   return parents.length <= 1 && children.length <= 1;
@@ -251,9 +248,7 @@ function isLinearNode(
  * @param graph - Graph representation
  * @returns Analysis of longest linear chain
  */
-export function calculateLongestLinearChain(
-  graph: GraphRepresentation
-): ChainAnalysis {
+export function calculateLongestLinearChain(graph: GraphRepresentation): ChainAnalysis {
   if (graph.nodes.length === 0) {
     return { length: 0, path: [], ratio: 0, isLinear: false };
   }

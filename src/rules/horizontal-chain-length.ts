@@ -74,9 +74,7 @@ function generateSuggestion(
   );
 
   // Suggest simplification
-  suggestions.push(
-    'Simplify by removing intermediate steps and focusing on key transitions'
-  );
+  suggestions.push('Simplify by removing intermediate steps and focusing on key transitions');
 
   return header + 'Suggestions:\n' + suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n\n');
 }
@@ -117,11 +115,7 @@ export const horizontalChainLengthRule: Rule = {
     const layoutType = isHorizontal ? 'horizontal' : 'vertical';
     const message = `Linear chain of ${chainAnalysis.length} nodes in ${layout} layout exceeds ${threshold}-node threshold for ${layoutType} layouts`;
 
-    const suggestion = generateSuggestion(
-      chainAnalysis.length,
-      chainAnalysis.path,
-      layout
-    );
+    const suggestion = generateSuggestion(chainAnalysis.length, chainAnalysis.path, layout);
 
     return {
       rule: this.name,
