@@ -28,7 +28,6 @@ function extractLabels(content: string): Array<[string, string]> {
     const trimmed = line.trim();
 
     // Match node definitions with labels
-    // eslint-disable-next-line no-useless-escape
     const labelPattern = /(\w+)\s*[[{(]+([^\]})]+)[\]})]*/g;
     let match;
 

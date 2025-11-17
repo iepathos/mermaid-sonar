@@ -5,6 +5,8 @@
 A complexity analyzer and readability linter for Mermaid diagrams. Like sonar detects underwater obstacles, Mermaid-Sonar detects hidden complexity issues before they cause readability problems.
 
 [![npm version](https://badge.fury.io/js/mermaid-sonar.svg)](https://www.npmjs.com/package/mermaid-sonar)
+[![Coverage](https://github.com/iepathos/mermaid-sonar/workflows/Coverage/badge.svg)](https://github.com/iepathos/mermaid-sonar/actions/workflows/coverage.yml)
+[![Release](https://github.com/iepathos/mermaid-sonar/workflows/Release/badge.svg)](https://github.com/iepathos/mermaid-sonar/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Why Mermaid-Sonar?
@@ -18,13 +20,13 @@ Mermaid diagrams are great for documentation, but complex diagrams can hurt more
 
 ## Features
 
-✅ **Syntax validation** - Detects Mermaid syntax errors before rendering
-✅ **Research-backed thresholds** - Not arbitrary limits
-✅ **Actionable recommendations** - Not just "too complex"
-✅ **Multiple output formats** - Terminal, JSON, Markdown, GitHub Actions
-✅ **Zero rendering dependencies** - Pure static analysis
-✅ **Fast** - Analyzes hundreds of diagrams in seconds
-✅ **Configurable** - Adjust thresholds to your needs
+- ✅ **Syntax validation** - Detects Mermaid syntax errors before rendering
+- ✅ **Research-backed thresholds** - Not arbitrary limits
+- ✅ **Actionable recommendations** - Not just "too complex"
+- ✅ **Multiple output formats** - Terminal, JSON, Markdown, GitHub Actions
+- ✅ **Zero rendering dependencies** - Pure static analysis
+- ✅ **Fast** - Analyzes hundreds of diagrams in seconds
+- ✅ **Configurable** - Adjust thresholds to your needs
 
 ## Quick Start
 

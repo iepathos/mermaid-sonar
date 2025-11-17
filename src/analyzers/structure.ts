@@ -22,7 +22,6 @@ function extractNodes(content: string): Set<string> {
   const nodes = new Set<string>();
 
   // Pattern 1: Node definitions with shapes (A[label], B{label}, C((label)), etc.)
-  // eslint-disable-next-line no-useless-escape
   const nodeDefPattern = /\b([A-Z][A-Z0-9]*)\s*[[{()]/g;
   let match;
 
