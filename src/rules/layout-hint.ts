@@ -11,6 +11,7 @@ import type { Metrics } from '../analyzers/types';
 import { buildGraph } from '../graph/adjacency';
 import { detectPatterns } from '../analyzers/patterns';
 import { recommendLayout } from '../analyzers/layout';
+import { calculateLongestLinearChain } from '../graph/algorithms';
 
 /**
  * Layout recommendation rule
@@ -43,6 +44,39 @@ export const layoutHintRule: Rule = {
       return null;
     }
 
+    // BIDIRECTIONAL VALIDATION: Check if recommending LR for a TD diagram
+    // If chain is too long, suppress LR recommendation and suggest alternatives
+    const isRecommendingLR = recommendation.recommended === 'LR' || recommendation.recommended === 'RL';
+    const currentIsTD = !recommendation.current || recommendation.current === 'TD' || recommendation.current === 'TB';
+
+    if (isRecommendingLR && currentIsTD) {
+      const chainAnalysis = calculateLongestLinearChain(graph);
+      const lrThreshold = 8;
+
+      if (chainAnalysis.length > lrThreshold) {
+        // Chain too long for LR - provide alternative suggestions
+        const message = `Sequential flow with ${chainAnalysis.length} nodes - too long for LR conversion`;
+
+        const suggestions = [
+          'Consider organizing into subgraphs to break up the chain',
+          'Keep TD layout but improve visual hierarchy',
+          'Simplify by removing intermediate nodes if possible',
+        ];
+
+        const suggestion = `Chain detected: ${chainAnalysis.path.slice(0, 3).join(' → ')}${chainAnalysis.path.length > 3 ? ' ...' : ''} (${chainAnalysis.length} nodes)\n\nLR layout not recommended due to excessive horizontal width.\n\nAlternative improvements:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\nExample subgraph organization:\nsubgraph Phase1\n  direction TB\n  ${chainAnalysis.path.slice(0, Math.min(3, chainAnalysis.path.length)).join(' --> ')}\nend\n\nsubgraph Phase2\n  direction TB\n  ${chainAnalysis.path.slice(Math.min(3, chainAnalysis.path.length)).join(' --> ')}\nend`;
+
+        return {
+          rule: this.name,
+          severity: 'info',
+          message,
+          filePath: diagram.filePath,
+          line: diagram.startLine,
+          suggestion,
+        };
+      }
+    }
+
+    // Normal recommendation flow
     let message = recommendation.reason;
     if (recommendation.current) {
       message += ` (current: ${recommendation.current}, suggested: ${recommendation.recommended})`;

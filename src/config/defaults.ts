@@ -41,6 +41,14 @@ export const defaultConfig: Config = {
       severity: 'warning',
       minConfidence: 0.6,
     },
+    'horizontal-chain-too-long': {
+      enabled: true,
+      severity: 'warning',
+      thresholds: {
+        LR: 8,
+        TD: 12,
+      },
+    },
     'long-labels': {
       enabled: true,
       severity: 'warning',

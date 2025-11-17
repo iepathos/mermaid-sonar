@@ -18,6 +18,7 @@ export interface Config {
     'max-nodes-low-density': RuleConfig;
     'cyclomatic-complexity': RuleConfig;
     'layout-hint': RuleConfig;
+    'horizontal-chain-too-long': RuleConfig;
     'long-labels': RuleConfig;
     'reserved-words': RuleConfig;
     'disconnected-components': RuleConfig;

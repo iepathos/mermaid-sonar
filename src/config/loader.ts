@@ -49,6 +49,10 @@ function mergeConfig(userConfig: PartialConfig): Config {
         ...defaultConfig.rules['layout-hint'],
         ...userConfig.rules?.['layout-hint'],
       },
+      'horizontal-chain-too-long': {
+        ...defaultConfig.rules['horizontal-chain-too-long'],
+        ...userConfig.rules?.['horizontal-chain-too-long'],
+      },
       'long-labels': {
         ...defaultConfig.rules['long-labels'],
         ...userConfig.rules?.['long-labels'],

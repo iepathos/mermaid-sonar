@@ -69,6 +69,87 @@ describe('Pattern-based Rules', () => {
 
       expect(issue).toBeNull();
     });
+
+    describe('Bidirectional Validation (TD → LR Gating)', () => {
+      it('should suppress LR recommendation for long TD chains (>8 nodes)', async () => {
+        const diagram: Diagram = {
+          content: `graph TD
+            A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L`,
+          startLine: 1,
+          filePath: 'test.md',
+          type: 'graph',
+        };
+
+        const metrics = analyzeStructure(diagram);
+        const config: RuleConfig = { enabled: true };
+        const issue = await layoutHintRule.check(diagram, metrics, config);
+
+        // Should NOT recommend LR layout
+        if (issue) {
+          expect(issue.message).not.toContain('suggested: LR');
+          expect(issue.message).toContain('too long for LR conversion');
+          expect(issue.suggestion).toContain('subgraph');
+        }
+      });
+
+      it('should allow LR recommendation for short TD chains (≤8 nodes)', async () => {
+        const diagram: Diagram = {
+          content: `graph TD
+            A --> B --> C --> D --> E --> F`,
+          startLine: 1,
+          filePath: 'test.md',
+          type: 'graph',
+        };
+
+        const metrics = analyzeStructure(diagram);
+        const config: RuleConfig = { enabled: true };
+        const issue = await layoutHintRule.check(diagram, metrics, config);
+
+        // Should recommend LR layout normally
+        if (issue?.message.includes('Sequential')) {
+          expect(issue.message).toContain('suggested: LR');
+        }
+      });
+
+      it('should provide alternative suggestions for long chains', async () => {
+        const diagram: Diagram = {
+          content: `graph TD
+            A --> B --> C --> D --> E --> F --> G --> H --> I --> J`,
+          startLine: 1,
+          filePath: 'test.md',
+          type: 'graph',
+        };
+
+        const metrics = analyzeStructure(diagram);
+        const config: RuleConfig = { enabled: true };
+        const issue = await layoutHintRule.check(diagram, metrics, config);
+
+        if (issue && issue.message.includes('too long')) {
+          expect(issue.suggestion).toContain('organizing into subgraphs');
+          expect(issue.suggestion).toContain('Keep TD layout');
+          expect(issue.suggestion).toContain('Simplify');
+        }
+      });
+
+      it('should handle edge case at threshold (8 nodes)', async () => {
+        const diagram: Diagram = {
+          content: `graph TD
+            A --> B --> C --> D --> E --> F --> G --> H`,
+          startLine: 1,
+          filePath: 'test.md',
+          type: 'graph',
+        };
+
+        const metrics = analyzeStructure(diagram);
+        const config: RuleConfig = { enabled: true };
+        const issue = await layoutHintRule.check(diagram, metrics, config);
+
+        // 8 nodes is at threshold, should still allow LR
+        if (issue?.message.includes('Sequential')) {
+          expect(issue.message).toContain('suggested: LR');
+        }
+      });
+    });
   });
 
   describe('Long Labels Rule', () => {

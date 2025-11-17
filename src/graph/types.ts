@@ -99,3 +99,21 @@ export interface ClusterSuggestion {
   /** Example subgraph code */
   example: string;
 }
+
+/**
+ * Analysis of the longest linear chain in a graph
+ *
+ * A linear chain is a sequence of nodes where each node has:
+ * - At most 1 incoming edge
+ * - At most 1 outgoing edge
+ */
+export interface ChainAnalysis {
+  /** Length of longest linear chain (number of nodes) */
+  length: number;
+  /** Node IDs in the chain path */
+  path: string[];
+  /** Ratio: chain length / total nodes (0-1) */
+  ratio: number;
+  /** True if >60% of graph is a linear chain */
+  isLinear: boolean;
+}

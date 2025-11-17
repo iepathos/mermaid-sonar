@@ -503,6 +503,7 @@ Create `.sonarrc.json`, `.sonarrc.yaml`, or add to `package.json`:
 | `cyclomatic-complexity` | 15 | Software engineering standards |
 | `max-branch-width` | 8 | Visual hierarchy research |
 | `layout-hint` | enabled | Mermaid layout best practices |
+| `horizontal-chain-too-long` | LR: 8, TD: 12 | Viewport width constraints & scrolling UX |
 
 See [docs/rules.md](./docs/rules.md) for detailed rule documentation.
 

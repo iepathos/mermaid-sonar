@@ -2,7 +2,7 @@
  * Graph algorithms for pattern detection
  */
 
-import type { GraphRepresentation, SpineAnalysis } from './types';
+import type { GraphRepresentation, SpineAnalysis, ChainAnalysis } from './types';
 
 /**
  * Finds root nodes (nodes with no incoming edges)
@@ -219,4 +219,93 @@ export function hasCycles(graph: GraphRepresentation): boolean {
   }
 
   return false;
+}
+
+/**
+ * Checks if a node is linear (≤1 parent and ≤1 child)
+ */
+function isLinearNode(
+  node: string,
+  graph: GraphRepresentation
+): boolean {
+  const parents = graph.reverseAdjacencyList.get(node) || [];
+  const children = graph.adjacencyList.get(node) || [];
+  return parents.length <= 1 && children.length <= 1;
+}
+
+/**
+ * Calculates the longest linear chain in a graph
+ *
+ * A linear chain is a sequence of nodes where each node has:
+ * - At most 1 incoming edge
+ * - At most 1 outgoing edge
+ *
+ * Algorithm:
+ * 1. Find all potential chain start points (nodes with 0-1 parents)
+ * 2. For each start point, traverse forward while linear property holds
+ * 3. Track longest chain found
+ * 4. Return chain metadata
+ *
+ * Time Complexity: O(V + E) where V = nodes, E = edges
+ *
+ * @param graph - Graph representation
+ * @returns Analysis of longest linear chain
+ */
+export function calculateLongestLinearChain(
+  graph: GraphRepresentation
+): ChainAnalysis {
+  if (graph.nodes.length === 0) {
+    return { length: 0, path: [], ratio: 0, isLinear: false };
+  }
+
+  let longestChain: string[] = [];
+
+  // Try starting from each node
+  for (const startNode of graph.nodes) {
+    if (!isLinearNode(startNode, graph)) continue;
+
+    const currentChain: string[] = [];
+    const chainVisited = new Set<string>();
+    let currentNode: string | undefined = startNode;
+
+    // Traverse forward while linear
+    while (currentNode !== undefined && !chainVisited.has(currentNode)) {
+      if (!isLinearNode(currentNode, graph)) break;
+
+      currentChain.push(currentNode);
+      chainVisited.add(currentNode);
+
+      // Move to next node in chain
+      const children: string[] = graph.adjacencyList.get(currentNode) || [];
+      if (children.length === 1) {
+        const nextNode: string = children[0];
+        const nextParents: string[] = graph.reverseAdjacencyList.get(nextNode) || [];
+
+        // Only continue if next node also has exactly 1 parent
+        if (nextParents.length === 1) {
+          currentNode = nextNode;
+        } else {
+          break;
+        }
+      } else {
+        // No children or multiple children - end of chain
+        break;
+      }
+    }
+
+    if (currentChain.length > longestChain.length) {
+      longestChain = currentChain;
+    }
+  }
+
+  const length = longestChain.length;
+  const ratio = length / graph.nodes.length;
+  const isLinear = ratio > 0.6;
+
+  return {
+    length,
+    path: longestChain,
+    ratio,
+    isLinear,
+  };
 }

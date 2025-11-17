@@ -4,7 +4,7 @@ This document describes all complexity rules implemented in Mermaid-Sonar, their
 
 ## Overview
 
-Mermaid-Sonar implements six research-backed rules for detecting complexity in Mermaid diagrams:
+Mermaid-Sonar implements seven research-backed rules for detecting complexity in Mermaid diagrams:
 
 | Rule | Default Threshold | Severity | Research Basis |
 |------|------------------|----------|----------------|
@@ -14,6 +14,7 @@ Mermaid-Sonar implements six research-backed rules for detecting complexity in M
 | [cyclomatic-complexity](#cyclomatic-complexity) | 15 | warning | Software engineering |
 | [max-branch-width](#max-branch-width) | 8 parallel branches | error | Visual hierarchy |
 | [layout-hint](#layout-hint) | enabled | info | Mermaid best practices |
+| [horizontal-chain-too-long](#horizontal-chain-too-long) | LR: 8, TD: 12 | warning | Viewport constraints & UX |
 
 ## Rule Details
 
@@ -368,6 +369,110 @@ graph LR
 - `enabled` (boolean): Enable/disable this rule
 - `wide-threshold` (number): Branch width triggering LR suggestion (default: 8)
 - `tall-threshold` (number): Depth triggering TD suggestion (default: 6)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### horizontal-chain-too-long
+
+**Description**: Detects excessively long linear chains that create wide diagrams in horizontal layouts or tall diagrams in vertical layouts.
+
+**When it triggers**:
+- LR/RL layouts: Linear chain exceeds 8 nodes
+- TD/TB layouts: Linear chain exceeds 12 nodes
+
+**What is a linear chain?**
+
+A linear chain is a sequence of nodes where each node has:
+- At most 1 incoming edge
+- At most 1 outgoing edge
+
+Example: `A --> B --> C --> D --> E` is a 5-node linear chain.
+
+**Why it matters**:
+
+Long horizontal chains create poor user experience:
+- **Excessive horizontal scrolling**: Users must scroll side-to-side to see the full diagram
+- **Viewport constraints**: Wide diagrams don't fit standard screen widths (1280-1920px)
+- **Poor readability**: Horizontal scrolling is less intuitive than vertical scrolling
+
+Vertical layouts are more tolerant of long chains (12 nodes) because vertical scrolling is more natural.
+
+**Bidirectional Validation**:
+
+This rule also prevents the `layout-hint` rule from suggesting LR layout for TD diagrams with long chains (>8 nodes), ensuring consistent advice.
+
+**Example that triggers the rule (LR layout)**:
+
+```mermaid
+graph LR
+  M1 --> C1 --> SEP1 --> C2 --> M2 --> C3 --> M1A --> C1A --> OVER --> M2A --> C3A
+  %% 11-node chain - exceeds LR threshold of 8
+```
+
+**Example that triggers the rule (TD layout)**:
+
+```mermaid
+graph TD
+  A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K --> L --> M
+  %% 13-node chain - exceeds TD threshold of 12
+```
+
+**How to fix**:
+
+1. **Convert LR to TD layout** (for horizontal chains):
+   ```mermaid
+   graph TD
+     M1 --> C1 --> SEP1
+     SEP1 --> C2 --> M2
+     M2 --> C3
+   ```
+
+2. **Organize into subgraphs** (break up long chains):
+   ```mermaid
+   graph TD
+     subgraph Before
+       direction TB
+       M1 --> C1 --> SEP1
+     end
+
+     subgraph After
+       direction TB
+       C2 --> M2 --> C3
+     end
+
+     Before -.-> After
+   ```
+
+3. **Simplify by removing intermediate nodes**:
+   ```mermaid
+   graph LR
+     Start --> KeyStep1 --> KeyStep2 --> End
+   ```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "horizontal-chain-too-long": {
+        "enabled": true,
+        "thresholds": {
+          "LR": 8,
+          "TD": 12
+        },
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `thresholds.LR` (number): Maximum chain length for LR/RL layouts (default: 8)
+- `thresholds.TD` (number): Maximum chain length for TD/TB layouts (default: 12)
 - `severity` ("error" | "warning" | "info"): Rule severity
 
 ---
