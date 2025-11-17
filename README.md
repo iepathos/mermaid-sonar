@@ -539,7 +539,7 @@ Contributions welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
 
 ## License
 
-MIT © Glen
+MIT © Glen Baker <iepathos@gmail.com>
 
 ## Acknowledgments
 
