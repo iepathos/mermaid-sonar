@@ -48,7 +48,7 @@ function extractLabels(content: string): Array<[string, string]> {
  */
 export const longLabelsRule: Rule = {
   name: 'long-labels',
-  defaultSeverity: 'info',
+  defaultSeverity: 'warning',
   defaultThreshold: 40,
 
   check(diagram: Diagram, _metrics: Metrics, config: RuleConfig): Issue | null {

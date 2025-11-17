@@ -19,7 +19,7 @@ import { findComponents } from '../graph/algorithms';
  */
 export const disconnectedRule: Rule = {
   name: 'disconnected-components',
-  defaultSeverity: 'info',
+  defaultSeverity: 'warning',
   defaultThreshold: 2,
 
   check(diagram: Diagram, _metrics: Metrics, config: RuleConfig): Issue | null {

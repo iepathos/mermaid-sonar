@@ -34,12 +34,12 @@ export const defaultConfig: Config = {
     },
     'layout-hint': {
       enabled: true,
-      severity: 'info',
+      severity: 'warning',
       minConfidence: 0.6,
     },
     'long-labels': {
       enabled: true,
-      severity: 'info',
+      severity: 'warning',
       threshold: 40,
     },
     'reserved-words': {
@@ -48,7 +48,7 @@ export const defaultConfig: Config = {
     },
     'disconnected-components': {
       enabled: true,
-      severity: 'info',
+      severity: 'warning',
       threshold: 2,
     },
   },

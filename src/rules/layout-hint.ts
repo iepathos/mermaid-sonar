@@ -20,7 +20,7 @@ import { recommendLayout } from '../analyzers/layout';
  */
 export const layoutHintRule: Rule = {
   name: 'layout-hint',
-  defaultSeverity: 'info',
+  defaultSeverity: 'warning',
 
   check(diagram: Diagram, _metrics: Metrics, config: RuleConfig): Issue | null {
     const severity = config.severity ?? this.defaultSeverity;

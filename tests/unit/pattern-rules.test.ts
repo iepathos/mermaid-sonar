@@ -32,7 +32,7 @@ describe('Pattern-based Rules', () => {
 
       expect(issue).not.toBeNull();
       expect(issue?.rule).toBe('layout-hint');
-      expect(issue?.severity).toBe('info');
+      expect(issue?.severity).toBe('warning');
     });
 
     it('should not suggest if current matches recommended', () => {
