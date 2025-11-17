@@ -84,7 +84,7 @@ export async function loadConfig(searchFrom?: string): Promise<Config> {
     }
 
     return defaultConfig;
-  } catch (_error) {
+  } catch {
     // If config file is malformed, log warning and use defaults
     console.warn('Warning: Failed to load config file, using defaults');
     return defaultConfig;
