@@ -23,7 +23,8 @@ function extractNodes(content: string): Set<string> {
 
   // Pattern 1: Node definitions with shapes (A[label], Start[label], B{label}, etc.)
   // Updated to match mixed case node IDs like Start, Filter, Skip
-  const nodeDefPattern = /\b([A-Z][A-Za-z0-9]*)\s*[[{()]/g;
+  // Negative lookbehind to avoid matching labels within shapes like ((label))
+  const nodeDefPattern = /(?<![[({])([A-Z][A-Za-z0-9]*)\s*[[{()]/g;
   let match;
 
   while ((match = nodeDefPattern.exec(content)) !== null) {
@@ -38,8 +39,9 @@ function extractNodes(content: string): Set<string> {
   }
 
   // Pattern 3: Nodes on the right side of edges
+  // Match node ID followed by shape delimiter or whitespace/end, not continuing into labels
   const targetPattern =
-    /(?:-->|==>|-.->|===>|<-->|<-.->|o--|x--)\s*(?:\|[^|]+\|)?\s*\b([A-Z][A-Za-z0-9]*)\b/g;
+    /(?:-->|==>|-.->|===>|<-->|<-.->|o--|x--)\s*(?:\|[^|]+\|)?\s*\b([A-Z][A-Za-z0-9]*)(?=\s*[[{(]|\s|$)/g;
 
   while ((match = targetPattern.exec(content)) !== null) {
     nodes.add(match[1]);
