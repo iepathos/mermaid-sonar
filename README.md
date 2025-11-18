@@ -17,6 +17,7 @@ Mermaid diagrams are great for documentation, but complex diagrams can hurt more
 - **Cognitive load research** (50/100 node thresholds)
 - **Mermaid best practices** (100 connection O(n²) limit)
 - **Layout intelligence** (LR vs TD recommendations)
+- **Viewport readability** (width/height constraints for optimal viewing)
 
 ## Features
 
@@ -504,6 +505,8 @@ Create `.sonarrc.json`, `.sonarrc.yaml`, or add to `package.json`:
 | `max-branch-width` | 8 | Visual hierarchy research |
 | `layout-hint` | enabled | Mermaid layout best practices |
 | `horizontal-chain-too-long` | LR: 8, TD: 12 | Viewport width constraints & scrolling UX |
+| `horizontal-width-readability` | info: 1500px, warning: 2000px, error: 2500px | Viewport width limits & readability |
+| `vertical-height-readability` | info: 800px, warning: 1200px, error: 2000px | Viewport height limits & readability |
 
 See [docs/rules.md](./docs/rules.md) for detailed rule documentation.
 
