@@ -16,6 +16,7 @@ Mermaid-Sonar implements eight research-backed rules for detecting complexity in
 | [layout-hint](#layout-hint) | enabled | info | Mermaid best practices |
 | [horizontal-chain-too-long](#horizontal-chain-too-long) | LR: 8, TD: 12 | warning | Viewport constraints & UX |
 | [horizontal-width-readability](#horizontal-width-readability) | 1200px target | warning | Viewport constraints & UX |
+| [vertical-height-readability](#vertical-height-readability) | 800px target | warning | Viewport constraints & UX |
 
 ## Rule Details
 
@@ -614,6 +615,278 @@ graph TD
 - **TD/TB layouts**: `maxBranchWidth × avgLabelLength × charWidth + maxBranchWidth × nodeSpacing`
 
 This is an approximation that doesn't require actual rendering, providing fast feedback during development.
+
+---
+
+### vertical-height-readability
+
+**Description**: Detects diagrams that exceed comfortable viewport heights, making it impossible to view all nodes simultaneously without scrolling.
+
+**When it triggers**:
+- Estimated diagram height exceeds viewport thresholds based on:
+  - **For TD/TB layouts**: Graph depth (longest path from root to leaf)
+  - **For LR/RL layouts**: Maximum parallel branch width
+- Three severity levels:
+  - **Info**: Height ≥ 800px
+  - **Warning**: Height ≥ 1200px
+  - **Error**: Height ≥ 2000px
+
+**Why it matters**:
+
+Excessive diagram height breaks the fundamental purpose of diagrams - showing relationships and flow at a glance:
+
+- **Impossible to compare nodes**: Users cannot reference nodes scrolled out of view, breaking ability to trace relationships
+- **Loss of context**: Scrolling removes surrounding nodes from view, making it hard to understand the big picture
+- **Poor mental model**: Users struggle to build a complete mental model when they can't see the whole diagram
+- **Reduced effectiveness**: The diagram becomes a documentation burden rather than a comprehension aid
+
+Unlike width issues which are painful but workable, height issues fundamentally break diagram usability because users need to see multiple related nodes simultaneously to understand flow and relationships.
+
+**Real-world examples that trigger the rule**:
+
+**TD Layout - Deep Organizational Hierarchy** (depth-based height):
+```mermaid
+graph TD
+  CEO[CEO] --> CTO[CTO]
+  CEO --> CFO[CFO]
+  CEO --> COO[COO]
+
+  CTO --> VPEng[VP Engineering]
+  CTO --> VPProd[VP Product]
+
+  VPEng --> DirBackend[Director Backend]
+  VPEng --> DirFrontend[Director Frontend]
+
+  DirBackend --> ManagerAPI[Manager API Team]
+  DirBackend --> ManagerDB[Manager DB Team]
+
+  ManagerAPI --> LeadAuth[Lead Auth]
+  ManagerAPI --> LeadGateway[Lead Gateway]
+
+  LeadAuth --> DevAuth1[Developer 1]
+  LeadAuth --> DevAuth2[Developer 2]
+
+  %% Depth: 7 levels, Estimated height: 630px
+  %% Actual complex org charts can be 15+ levels deep
+```
+
+**TD Layout - Decision Tree** (depth-based height):
+```mermaid
+graph TD
+  Start{User Login?} --> Auth{Authenticated?}
+  Auth -->|No| Error1[Show Error]
+  Auth -->|Yes| Perm{Has Permission?}
+
+  Perm -->|No| Error2[Access Denied]
+  Perm -->|Yes| Valid{Data Valid?}
+
+  Valid -->|No| Error3[Validation Failed]
+  Valid -->|Yes| Process{Can Process?}
+
+  Process -->|No| Error4[Processing Error]
+  Process -->|Yes| Save{Saved?}
+
+  Save -->|No| Error5[Save Failed]
+  Save -->|Yes| Notify{Notify?}
+
+  Notify -->|Yes| Send[Send Notification]
+  Notify -->|No| Done[Complete]
+  Send --> Done
+
+  %% Depth: 7 levels, many decision branches
+  %% Estimated height: 630px
+```
+
+**LR Layout - Process Flow with Parallel Paths** (branching-based height):
+```mermaid
+graph LR
+  Start[Receive Request] --> ValidateAuth[Validate Auth]
+
+  ValidateAuth --> ProcessA[Process Type A]
+  ValidateAuth --> ProcessB[Process Type B]
+  ValidateAuth --> ProcessC[Process Type C]
+  ValidateAuth --> ProcessD[Process Type D]
+  ValidateAuth --> ProcessE[Process Type E]
+  ValidateAuth --> ProcessF[Process Type F]
+  ValidateAuth --> ProcessG[Process Type G]
+  ValidateAuth --> ProcessH[Process Type H]
+  ValidateAuth --> ProcessI[Process Type I]
+  ValidateAuth --> ProcessJ[Process Type J]
+
+  ProcessA --> Merge[Merge Results]
+  ProcessB --> Merge
+  ProcessC --> Merge
+  ProcessD --> Merge
+  ProcessE --> Merge
+  ProcessF --> Merge
+  ProcessG --> Merge
+  ProcessH --> Merge
+  ProcessI --> Merge
+  ProcessJ --> Merge
+
+  %% 10 parallel branches in LR layout
+  %% Estimated height: 900px (10 branches × 90px/branch)
+```
+
+**LR Layout - State Machine** (branching-based height):
+```mermaid
+graph LR
+  Idle --> EventA[Handle Event A]
+  Idle --> EventB[Handle Event B]
+  Idle --> EventC[Handle Event C]
+  Idle --> EventD[Handle Event D]
+  Idle --> EventE[Handle Event E]
+  Idle --> EventF[Handle Event F]
+  Idle --> EventG[Handle Event G]
+  Idle --> EventH[Handle Event H]
+
+  EventA --> Processing
+  EventB --> Processing
+  EventC --> Processing
+  EventD --> Processing
+  EventE --> Processing
+  EventF --> Processing
+  EventG --> Processing
+  EventH --> Processing
+
+  %% 8 parallel state transitions
+  %% Estimated height: 720px
+```
+
+**How to fix**:
+
+**For TD/TB layouts** (depth issue):
+
+1. **Break into multiple diagrams organized by layers**:
+   ```mermaid
+   graph TD
+     %% High-Level Overview
+     CEO --> Executives[Executive Team]
+     Executives --> Directors[Director Level]
+     Directors --> Managers[Manager Level]
+   ```
+   ```mermaid
+   graph TD
+     %% Detailed: Engineering Track
+     VPEng[VP Engineering] --> DirBackend[Director Backend]
+     VPEng --> DirFrontend[Director Frontend]
+     DirBackend --> Teams[Team Leads]
+   ```
+
+2. **Group intermediate nodes into subgraphs**:
+   ```mermaid
+   graph TD
+     CEO --> Executives
+
+     subgraph Executives
+       direction TB
+       CTO --> VPEng[VP Engineering]
+       CFO --> VPFin[VP Finance]
+       COO --> VPOps[VP Operations]
+     end
+
+     Executives --> Directors[Next Level]
+   ```
+
+3. **Abstract away some levels**: Not every intermediate step needs to be shown
+
+4. **Use links between diagrams**: Reference separate diagrams instead of one deep hierarchy
+
+**For LR/RL layouts** (wide branching issue):
+
+1. **Convert to TD layout** to handle wide branching better:
+   ```mermaid
+   graph TD
+     Start[Receive Request] --> ProcessGroup[Process Handlers]
+
+     ProcessGroup --> ProcessA[Type A]
+     ProcessGroup --> ProcessB[Type B]
+     ProcessGroup --> ProcessC[Type C]
+     %% ... continues vertically with better scrolling
+   ```
+
+2. **Group parallel branches into subgraphs**:
+   ```mermaid
+   graph LR
+     Start --> Category1
+     Start --> Category2
+
+     subgraph Category1[Category A-E]
+       ProcessA
+       ProcessB
+       ProcessC
+       ProcessD
+       ProcessE
+     end
+
+     subgraph Category2[Category F-J]
+       ProcessF
+       ProcessG
+       ProcessH
+       ProcessI
+       ProcessJ
+     end
+
+     Category1 --> Merge
+     Category2 --> Merge
+   ```
+
+3. **Split into multiple diagrams by category**: Show different functional areas separately
+
+4. **Reduce number of parallel paths**: Consolidate similar branches
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "vertical-height-readability": {
+        "enabled": true,
+        "targetHeight": 800,
+        "thresholds": {
+          "info": 800,
+          "warning": 1200,
+          "error": 2000
+        },
+        "nodeHeight": 40,
+        "verticalSpacing": 50,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `targetHeight` (number): Comfortable viewport height in pixels (default: 800)
+- `thresholds.info` (number): Height triggering info severity (default: 800)
+- `thresholds.warning` (number): Height triggering warning severity (default: 1200)
+- `thresholds.error` (number): Height triggering error severity (default: 2000)
+- `nodeHeight` (number): Mermaid node height in pixels (default: 40)
+- `verticalSpacing` (number): Vertical spacing between nodes in pixels (default: 50)
+- `severity` ("error" | "warning" | "info"): Override severity for all violations
+
+**How height is calculated**:
+
+- **TD/TB layouts**: `maxDepth × (nodeHeight + verticalSpacing)`
+  - Depth is the longest path from any root node to any leaf node
+  - Handles cycles by limiting traversal depth
+
+- **LR/RL layouts**: `maxBranchWidth × (nodeHeight + verticalSpacing)`
+  - Branch width is the maximum number of nodes at the same depth level
+  - In LR layouts, wide branching creates vertical expansion
+
+This is an approximation that doesn't require actual rendering, providing fast feedback during development.
+
+**Coordination with horizontal-width-readability**:
+
+These two rules work together to ensure diagrams fit within comfortable viewport boundaries:
+- `vertical-height-readability`: Ensures diagrams aren't too tall (vertical scrolling)
+- `horizontal-width-readability`: Ensures diagrams aren't too wide (horizontal scrolling)
+
+The rules may suggest opposite layout changes (e.g., "convert LR to TD" vs "convert TD to LR"), which indicates the diagram is fundamentally too complex and should be split into multiple diagrams.
 
 ---
 
