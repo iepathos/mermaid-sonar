@@ -54,9 +54,9 @@ export const defaultConfig: Config = {
       severity: 'warning',
       targetWidth: 1200,
       thresholds: {
-        info: 1200,    // Exceeding viewport = info
+        info: 1200, // Exceeding viewport = info
         warning: 1500, // Readability problem = warning
-        error: 2500,   // Severely unreadable = error
+        error: 2500, // Severely unreadable = error
       },
       charWidth: 8,
       nodeSpacing: 50,

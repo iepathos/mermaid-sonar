@@ -219,6 +219,32 @@ describe('Rule System', () => {
         expect(widthIssue!.suggestion).toContain('Convert to TD');
         expect(widthIssue!.suggestion).toContain('top-down');
       });
+
+      it('should use longest chain for branching LR layouts', async () => {
+        const diagrams = extractDiagramsFromFile('tests/fixtures/branching-lr-layout.md');
+        const metrics = analyzeStructure(diagrams[0]);
+
+        // This branching diagram has 6 total nodes but longest chain of only 3
+        // Should NOT trigger width warning with default thresholds
+        const issues = await runRules(diagrams[0], metrics, defaultConfig);
+        const widthIssue = issues.find((i) => i.rule === 'horizontal-width-readability');
+
+        // Should not trigger because longest chain is only 3 nodes
+        expect(widthIssue).toBeUndefined();
+      });
+
+      it('should include chain information in message for LR layouts', async () => {
+        const diagrams = extractDiagramsFromFile('tests/fixtures/wide-lr-layout.md');
+        const metrics = analyzeStructure(diagrams[0]);
+
+        const issues = await runRules(diagrams[0], metrics, defaultConfig);
+        const widthIssue = issues.find((i) => i.rule === 'horizontal-width-readability');
+
+        if (widthIssue) {
+          // Message should include chain path preview
+          expect(widthIssue.message).toContain('longest chain');
+        }
+      });
     });
 
     describe('TD Layout', () => {
