@@ -4,21 +4,81 @@ This document describes all complexity rules implemented in Mermaid-Sonar, their
 
 ## Overview
 
-Mermaid-Sonar implements eight research-backed rules for detecting complexity in Mermaid diagrams:
+Mermaid-Sonar implements research-backed rules for detecting complexity in Mermaid diagrams:
 
 | Rule | Default Threshold | Severity | Research Basis |
 |------|------------------|----------|----------------|
+| [syntax-validation](#syntax-validation) | N/A | error | Mermaid parser |
 | [max-nodes](#max-nodes) | 50/100 (density-based) | error | Cognitive load research |
 | [max-edges](#max-edges) | 100 connections | warning | Mermaid O(n²) complexity |
-| [graph-density](#graph-density) | 0.3 | warning | Graph theory |
 | [cyclomatic-complexity](#cyclomatic-complexity) | 15 | warning | Software engineering |
-| [max-branch-width](#max-branch-width) | 8 parallel branches | error | Visual hierarchy |
 | [layout-hint](#layout-hint) | enabled | info | Mermaid best practices |
 | [horizontal-chain-too-long](#horizontal-chain-too-long) | LR: 8, TD: 12 | warning | Viewport constraints & UX |
 | [horizontal-width-readability](#horizontal-width-readability) | 1200px target | warning | Viewport constraints & UX |
 | [vertical-height-readability](#vertical-height-readability) | 800px target | warning | Viewport constraints & UX |
+| [long-labels](#long-labels) | 40 characters | warning | Readability |
+| [reserved-words](#reserved-words) | N/A | warning | Mermaid syntax |
+| [disconnected-components](#disconnected-components) | 2 components | warning | Diagram cohesion |
 
 ## Rule Details
+
+### syntax-validation
+
+**Description**: Validates Mermaid diagram syntax using the official Mermaid parser.
+
+**When it triggers**:
+- Diagram contains invalid Mermaid syntax
+- Parse errors in diagram structure
+- Unsupported or malformed diagram features
+
+**Why it matters**:
+
+Invalid syntax prevents diagrams from rendering correctly. This rule catches errors early in the development process before diagrams are committed or published.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  A -> B
+  %% Invalid arrow syntax (should be -->)
+```
+
+**Common syntax errors**:
+
+1. **Wrong arrow syntax**: Using `->` or `=>` instead of `-->`
+2. **Unclosed brackets**: Missing closing brackets in node labels
+3. **Invalid diagram type**: Misspelled diagram type (e.g., `graphh` instead of `graph`)
+4. **Reserved word conflicts**: Using Mermaid keywords as node IDs
+
+**How to fix**:
+
+Follow the error message and suggestion provided. Common fixes:
+
+1. **Use correct arrow syntax**: `-->` for directed edges
+2. **Check bracket balance**: Ensure all `[`, `{`, `(` have matching closing brackets
+3. **Verify diagram type**: Use supported types (graph, flowchart, sequenceDiagram, etc.)
+4. **Consult documentation**: See https://mermaid.js.org/intro/
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "syntax-validation": {
+        "enabled": true,
+        "severity": "error"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `severity` ("error" | "warning" | "info"): Rule severity (recommended: error)
+
+---
 
 ### max-nodes
 
@@ -133,63 +193,6 @@ flowchart LR
 
 ---
 
-### graph-density
-
-**Description**: Flags diagrams with excessive connection density.
-
-**When it triggers**:
-- Graph density exceeds 0.3 (30% of possible connections)
-
-**Formula**:
-```
-density = edges / (nodes × (nodes - 1))
-```
-
-**Why it matters**:
-
-Graph theory research shows that dense graphs (where many nodes connect to many other nodes) are harder to visualize and comprehend. A density above 0.3 indicates visual clutter that impairs readability.
-
-**Example that triggers the rule**:
-
-```mermaid
-graph TD
-  A --> B & C & D & E
-  B --> C & D & E
-  C --> D & E
-  D --> E
-  %% Every node connects to every other node (density = 1.0)
-```
-
-**How to fix**:
-
-1. **Remove redundant connections**: Keep only essential edges
-2. **Simplify relationships**: Consolidate similar connections
-3. **Use hierarchy**: Convert mesh to tree structure if possible
-4. **Split diagram**: Separate into less-connected components
-
-**Configuration**:
-
-```json
-{
-  "mermaid-sonar": {
-    "rules": {
-      "graph-density": {
-        "enabled": true,
-        "threshold": 0.3,
-        "severity": "warning"
-      }
-    }
-  }
-}
-```
-
-**Options**:
-- `enabled` (boolean): Enable/disable this rule
-- `threshold` (number): Maximum density (0-1, default: 0.3)
-- `severity` ("error" | "warning" | "info"): Rule severity
-
----
-
 ### cyclomatic-complexity
 
 **Description**: Flags diagrams with high decision complexity.
@@ -250,67 +253,6 @@ flowchart TD
 **Options**:
 - `enabled` (boolean): Enable/disable this rule
 - `limit` (number): Maximum complexity (default: 15)
-- `severity` ("error" | "warning" | "info"): Rule severity
-
----
-
-### max-branch-width
-
-**Description**: Flags tree diagrams with too many parallel branches from a single node.
-
-**When it triggers**:
-- Any node has more than 8 direct children
-
-**Why it matters**:
-
-Visual hierarchy research shows that humans struggle to scan and compare more than 7±2 items simultaneously (Miller's Law). In top-down (TD) diagrams, wide branches create horizontal scanning challenges.
-
-Wide trees should use left-right (LR) layout instead, which handles horizontal expansion better.
-
-**Example that triggers the rule**:
-
-```mermaid
-graph TD
-  Root --> Child1 & Child2 & Child3 & Child4 & Child5
-        & Child6 & Child7 & Child8 & Child9 & Child10
-  %% 10 parallel branches - too many for TD layout
-```
-
-**How to fix**:
-
-1. **Use LR layout**: `graph LR` instead of `graph TD` for wide trees
-2. **Group children**: Introduce intermediate grouping nodes
-3. **Split diagram**: Separate into multiple focused views
-4. **Pagination**: Show subsets of branches
-
-**Suggested fix for wide trees**:
-
-```mermaid
-graph LR
-  Root --> Child1 & Child2 & Child3 & Child4 & Child5
-        & Child6 & Child7 & Child8 & Child9 & Child10
-  %% LR layout handles wide trees better
-```
-
-**Configuration**:
-
-```json
-{
-  "mermaid-sonar": {
-    "rules": {
-      "max-branch-width": {
-        "enabled": true,
-        "limit": 8,
-        "severity": "error"
-      }
-    }
-  }
-}
-```
-
-**Options**:
-- `enabled` (boolean): Enable/disable this rule
-- `limit` (number): Maximum children per node (default: 8)
 - `severity` ("error" | "warning" | "info"): Rule severity
 
 ---
@@ -890,6 +832,225 @@ The rules may suggest opposite layout changes (e.g., "convert LR to TD" vs "conv
 
 ---
 
+### long-labels
+
+**Description**: Warns when node labels exceed recommended length thresholds.
+
+**When it triggers**:
+- One or more node labels exceed 40 characters (default threshold)
+
+**Why it matters**:
+
+Long labels reduce diagram readability by:
+- Making text too small when diagram is scaled to fit viewport
+- Creating wide nodes that force excessive horizontal spacing
+- Cluttering the visual flow with verbose text
+- Making diagrams harder to scan quickly
+
+Labels should be concise summaries, with details in accompanying documentation.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  A[This is an extremely long and verbose label that exceeds the recommended length]
+  A --> B[Another unnecessarily detailed description of the process step]
+```
+
+**How to fix**:
+
+1. **Use abbreviations**: `Auth Service` instead of `Authentication and Authorization Service`
+2. **Move details to docs**: Keep diagrams high-level, details in documentation
+3. **Break into multiple nodes**: Split complex steps into smaller nodes
+4. **Use concise phrasing**: `Validate Input` instead of `Validate and sanitize all user input data`
+
+**Good example**:
+
+```mermaid
+graph TD
+  A[Auth Service] --> B[Validate]
+  B --> C[Process]
+```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "long-labels": {
+        "enabled": true,
+        "threshold": 40,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `threshold` (number): Maximum label length in characters (default: 40)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### reserved-words
+
+**Description**: Detects usage of Mermaid reserved words as node IDs, which can cause syntax errors or unexpected rendering.
+
+**When it triggers**:
+- Node IDs use reserved words: `end`, `click`, `call`, `style`, `class`, `classDef`, `direction`
+- Node IDs match problematic patterns: `o123`, `x456` (conflicts with shape syntax)
+
+**Exception**: The reserved word `end` is allowed when used as a conventional flowchart terminator (e.g., `End([Complete])`)
+
+**Why it matters**:
+
+Reserved words have special meaning in Mermaid syntax. Using them as node IDs causes:
+- Parse errors and rendering failures
+- Unexpected behavior where diagram interprets node ID as a command
+- Conflicts with shape syntax (e.g., `o1` looks like circle syntax)
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  start --> click
+  click --> end
+  %% 'click' and 'end' are reserved words
+```
+
+**Example that passes (flowchart terminator)**:
+
+```mermaid
+graph TD
+  Start([Begin]) --> Process[Do Work]
+  Process --> End([Complete])
+  %% 'End' is allowed as a terminator node
+```
+
+**How to fix**:
+
+1. **Prefix with underscore**: `_end`, `_click`, `_style`
+2. **Use descriptive names**: `endNode`, `clickHandler`, `styleConfig`
+3. **Add suffix**: `click_btn`, `end_state`, `style_def`
+
+**Fixed example**:
+
+```mermaid
+graph TD
+  start --> clickHandler
+  clickHandler --> endNode
+```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "reserved-words": {
+        "enabled": true,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
+### disconnected-components
+
+**Description**: Detects when a diagram contains multiple disconnected graphs that should likely be split into separate diagrams.
+
+**When it triggers**:
+- Diagram contains 2 or more disconnected components (default threshold)
+
+**What is a disconnected component?**
+
+A disconnected component is a group of nodes that are connected to each other but have no connections to other groups in the diagram.
+
+**Why it matters**:
+
+Multiple disconnected components in one diagram indicate:
+- Unrelated concerns mixed together
+- Missing logical connections between parts
+- Better served as separate, focused diagrams
+- Potential for confusion about relationships
+
+If components are truly separate, they should be separate diagrams. If they're related, add connecting edges to show the relationship.
+
+**Example that triggers the rule**:
+
+```mermaid
+graph TD
+  %% Component 1: Authentication
+  A[Login] --> B[Validate]
+  B --> C[Token]
+
+  %% Component 2: Payment (disconnected!)
+  X[Cart] --> Y[Checkout]
+  Y --> Z[Payment]
+```
+
+**How to fix**:
+
+1. **Split into separate diagrams** (if truly unrelated):
+
+```mermaid
+graph TD
+  %% Diagram 1: Authentication Flow
+  A[Login] --> B[Validate]
+  B --> C[Token]
+```
+
+```mermaid
+graph TD
+  %% Diagram 2: Payment Flow
+  X[Cart] --> Y[Checkout]
+  Y --> Z[Payment]
+```
+
+2. **Add connecting edges** (if related):
+
+```mermaid
+graph TD
+  A[Login] --> B[Validate]
+  B --> C[Token]
+  C --> X[Cart]
+  X --> Y[Checkout]
+  Y --> Z[Payment]
+```
+
+**Configuration**:
+
+```json
+{
+  "mermaid-sonar": {
+    "rules": {
+      "disconnected-components": {
+        "enabled": true,
+        "threshold": 2,
+        "severity": "warning"
+      }
+    }
+  }
+}
+```
+
+**Options**:
+- `enabled` (boolean): Enable/disable this rule
+- `threshold` (number): Minimum number of components to trigger (default: 2)
+- `severity` ("error" | "warning" | "info"): Rule severity
+
+---
+
 ## Global Configuration
 
 ### Disabling Rules
@@ -922,7 +1083,7 @@ Change rule severity:
       "max-nodes": {
         "severity": "warning"  // Instead of error
       },
-      "graph-density": {
+      "cyclomatic-complexity": {
         "severity": "error"    // Instead of warning
       }
     }
