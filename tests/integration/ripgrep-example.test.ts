@@ -96,9 +96,9 @@ describe('Real-World Example: Ripgrep Count List', () => {
       // A diagram that works fine in default viewport but is too wide for mkdocs
 
       // With default profile
-      const defaultResult = await execAsync(
-        `node dist/cli.js --format json ${ripgrepPath}`
-      ).catch((err) => ({ stdout: err.stdout, stderr: err.stderr }));
+      const defaultResult = await execAsync(`node dist/cli.js --format json ${ripgrepPath}`).catch(
+        (err) => ({ stdout: err.stdout, stderr: err.stderr })
+      );
 
       // With mkdocs profile
       const mkdocsResult = await execAsync(

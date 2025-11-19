@@ -57,9 +57,7 @@ describe('Viewport Integration Tests', () => {
 
     it('should accept --max-height flag', async () => {
       try {
-        const { stdout } = await execAsync(
-          `node dist/cli.js --max-height 1000 ${wideLRPath}`
-        );
+        const { stdout } = await execAsync(`node dist/cli.js --max-height 1000 ${wideLRPath}`);
         expect(stdout).toContain('file');
       } catch (error: any) {
         // Exit code 1 is expected when violations are detected
