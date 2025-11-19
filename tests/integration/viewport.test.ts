@@ -14,6 +14,12 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
+interface ExecError extends Error {
+  code?: number;
+  stdout?: string;
+  stderr?: string;
+}
+
 describe('Viewport Integration Tests', () => {
   const fixturesPath = path.join(__dirname, '../fixtures');
   const wideLRPath = path.join(fixturesPath, 'wide-lr-layout.md');
@@ -36,11 +42,12 @@ describe('Viewport Integration Tests', () => {
 
         // If successful, output should contain file
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is expected when diagram errors are detected
-        expect(error.code).toBe(1);
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
         // Errors should be reported in stdout/stderr, not as crashes
-        expect(error.stdout || error.stderr).toBeTruthy();
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
 
@@ -48,10 +55,11 @@ describe('Viewport Integration Tests', () => {
       try {
         const { stdout } = await execAsync(`node dist/cli.js --max-width 800 ${wideLRPath}`);
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is expected when violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stdout || error.stderr).toBeTruthy();
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
 
@@ -59,10 +67,11 @@ describe('Viewport Integration Tests', () => {
       try {
         const { stdout } = await execAsync(`node dist/cli.js --max-height 1000 ${wideLRPath}`);
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is expected when violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stdout || error.stderr).toBeTruthy();
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
 
@@ -72,10 +81,11 @@ describe('Viewport Integration Tests', () => {
           `node dist/cli.js --viewport-profile mkdocs --max-width 900 ${wideLRPath}`
         );
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is expected when violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stdout || error.stderr).toBeTruthy();
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
   });
@@ -181,10 +191,11 @@ describe('Viewport Integration Tests', () => {
           `node dist/cli.js --viewport-profile mkdocs ${wideLRPath}`
         );
         expect(stderr).not.toContain('unknown profile');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stderr).not.toContain('unknown profile');
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stderr).not.toContain('unknown profile');
       }
     }, 30000);
 
@@ -194,10 +205,11 @@ describe('Viewport Integration Tests', () => {
           `node dist/cli.js --viewport-profile github ${wideLRPath}`
         );
         expect(stderr).not.toContain('unknown profile');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stderr).not.toContain('unknown profile');
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stderr).not.toContain('unknown profile');
       }
     }, 30000);
 
@@ -207,10 +219,11 @@ describe('Viewport Integration Tests', () => {
           `node dist/cli.js --viewport-profile docusaurus ${wideLRPath}`
         );
         expect(stderr).not.toContain('unknown profile');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stderr).not.toContain('unknown profile');
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stderr).not.toContain('unknown profile');
       }
     }, 30000);
 
@@ -220,10 +233,11 @@ describe('Viewport Integration Tests', () => {
           `node dist/cli.js --viewport-profile mobile ${wideLRPath}`
         );
         expect(stderr).not.toContain('unknown profile');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stderr).not.toContain('unknown profile');
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stderr).not.toContain('unknown profile');
       }
     }, 30000);
   });

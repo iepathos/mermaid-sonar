@@ -16,6 +16,12 @@ import path from 'path';
 
 const execAsync = promisify(exec);
 
+interface ExecError extends Error {
+  code?: number;
+  stdout?: string;
+  stderr?: string;
+}
+
 describe('Real-World Example: Ripgrep Count List', () => {
   const fixturesPath = path.join(__dirname, '../fixtures');
   const ripgrepPath = path.join(fixturesPath, 'ripgrep-count-list.md');
@@ -49,10 +55,11 @@ describe('Real-World Example: Ripgrep Count List', () => {
       try {
         const { stdout } = await execAsync(`node dist/cli.js ${ripgrepPath}`);
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stdout || error.stderr).toBeTruthy();
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
 
@@ -65,11 +72,12 @@ describe('Real-World Example: Ripgrep Count List', () => {
         // The diagram is wide but not exceeding 2500px
         expect(output).toBeDefined();
         expect(output.results).toBeDefined();
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        if (error.stdout) {
-          const output = JSON.parse(error.stdout);
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        if (execError.stdout) {
+          const output = JSON.parse(execError.stdout);
           expect(output).toBeDefined();
           expect(output.results).toBeDefined();
         }
@@ -84,10 +92,11 @@ describe('Real-World Example: Ripgrep Count List', () => {
           `node dist/cli.js --viewport-profile mkdocs ${ripgrepPath}`
         );
         expect(stdout).toContain('file');
-      } catch (error: any) {
+      } catch (error) {
         // Exit code 1 is acceptable if violations are detected
-        expect(error.code).toBe(1);
-        expect(error.stdout || error.stderr).toBeTruthy();
+        const execError = error as ExecError;
+        expect(execError.code).toBe(1);
+        expect(execError.stdout || execError.stderr).toBeTruthy();
       }
     }, 30000);
 
