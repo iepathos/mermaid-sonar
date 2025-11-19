@@ -74,8 +74,14 @@ export function resolveViewportConfig(
     }
   }
 
+  // Track if we need to update error thresholds
+  let maxWidthOverride: number | undefined;
+  let maxHeightOverride: number | undefined;
+
   // Apply config direct overrides
   if (viewportConfig?.maxWidth !== undefined || viewportConfig?.maxHeight !== undefined) {
+    maxWidthOverride = viewportConfig.maxWidth;
+    maxHeightOverride = viewportConfig.maxHeight;
     profile = {
       ...profile,
       maxWidth: viewportConfig.maxWidth ?? profile.maxWidth,
@@ -86,6 +92,8 @@ export function resolveViewportConfig(
 
   // Apply CLI overrides (highest priority)
   if (cliOptions?.maxWidth !== undefined || cliOptions?.maxHeight !== undefined) {
+    maxWidthOverride = cliOptions.maxWidth ?? maxWidthOverride;
+    maxHeightOverride = cliOptions.maxHeight ?? maxHeightOverride;
     profile = {
       ...profile,
       maxWidth: cliOptions.maxWidth ?? profile.maxWidth,
@@ -95,18 +103,19 @@ export function resolveViewportConfig(
   }
 
   // Build final resolved config
+  // Note: error thresholds ALWAYS match maxWidth/maxHeight
   const resolved: ResolvedViewportConfig = {
     maxWidth: profile.maxWidth,
     maxHeight: profile.maxHeight,
     widthThresholds: {
       info: profile.widthThresholds?.info ?? Math.round(profile.maxWidth * 0.6),
       warning: profile.widthThresholds?.warning ?? Math.round(profile.maxWidth * 0.8),
-      error: profile.widthThresholds?.error ?? profile.maxWidth,
+      error: profile.maxWidth, // Always matches maxWidth
     },
     heightThresholds: {
       info: profile.heightThresholds?.info ?? Math.round(profile.maxHeight * 0.6),
       warning: profile.heightThresholds?.warning ?? Math.round(profile.maxHeight * 0.8),
-      error: profile.heightThresholds?.error ?? profile.maxHeight,
+      error: profile.maxHeight, // Always matches maxHeight
     },
     source,
   };

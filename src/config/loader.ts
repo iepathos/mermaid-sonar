@@ -17,12 +17,147 @@ const explorer = cosmiconfig('sonar', {
 });
 
 /**
+ * Validates viewport configuration values
+ *
+ * @param config - User-provided configuration to validate
+ * @throws Error if configuration is invalid
+ */
+function validateViewportConfig(config: PartialConfig): void {
+  const viewport = config.viewport;
+  if (!viewport) {
+    return;
+  }
+
+  // Validate direct maxWidth/maxHeight overrides
+  if (viewport.maxWidth !== undefined) {
+    if (typeof viewport.maxWidth !== 'number' || viewport.maxWidth <= 0) {
+      throw new Error(
+        `Invalid viewport.maxWidth: must be a positive number, got ${viewport.maxWidth}`
+      );
+    }
+  }
+
+  if (viewport.maxHeight !== undefined) {
+    if (typeof viewport.maxHeight !== 'number' || viewport.maxHeight <= 0) {
+      throw new Error(
+        `Invalid viewport.maxHeight: must be a positive number, got ${viewport.maxHeight}`
+      );
+    }
+  }
+
+  // Validate custom profiles
+  if (viewport.profiles) {
+    for (const [profileName, profile] of Object.entries(viewport.profiles)) {
+      if (typeof profile.maxWidth !== 'number' || profile.maxWidth <= 0) {
+        throw new Error(
+          `Invalid maxWidth in profile "${profileName}": must be a positive number, got ${profile.maxWidth}`
+        );
+      }
+
+      if (typeof profile.maxHeight !== 'number' || profile.maxHeight <= 0) {
+        throw new Error(
+          `Invalid maxHeight in profile "${profileName}": must be a positive number, got ${profile.maxHeight}`
+        );
+      }
+
+      // Validate thresholds if provided
+      if (profile.widthThresholds) {
+        const { info, warning, error } = profile.widthThresholds;
+
+        if (info !== undefined && (typeof info !== 'number' || info <= 0)) {
+          throw new Error(
+            `Invalid widthThresholds.info in profile "${profileName}": must be a positive number, got ${info}`
+          );
+        }
+
+        if (warning !== undefined && (typeof warning !== 'number' || warning <= 0)) {
+          throw new Error(
+            `Invalid widthThresholds.warning in profile "${profileName}": must be a positive number, got ${warning}`
+          );
+        }
+
+        if (error !== undefined && (typeof error !== 'number' || error <= 0)) {
+          throw new Error(
+            `Invalid widthThresholds.error in profile "${profileName}": must be a positive number, got ${error}`
+          );
+        }
+
+        // Check ascending order
+        if (info !== undefined && warning !== undefined && info >= warning) {
+          throw new Error(
+            `Invalid widthThresholds in profile "${profileName}": info (${info}) must be less than warning (${warning})`
+          );
+        }
+
+        if (warning !== undefined && error !== undefined && warning > error) {
+          throw new Error(
+            `Invalid widthThresholds in profile "${profileName}": warning (${warning}) must be less than or equal to error (${error})`
+          );
+        }
+
+        // Check error threshold matches maxWidth if specified
+        if (error !== undefined && error !== profile.maxWidth) {
+          throw new Error(
+            `Invalid widthThresholds.error in profile "${profileName}": must match maxWidth (${profile.maxWidth}), got ${error}`
+          );
+        }
+      }
+
+      if (profile.heightThresholds) {
+        const { info, warning, error } = profile.heightThresholds;
+
+        if (info !== undefined && (typeof info !== 'number' || info <= 0)) {
+          throw new Error(
+            `Invalid heightThresholds.info in profile "${profileName}": must be a positive number, got ${info}`
+          );
+        }
+
+        if (warning !== undefined && (typeof warning !== 'number' || warning <= 0)) {
+          throw new Error(
+            `Invalid heightThresholds.warning in profile "${profileName}": must be a positive number, got ${warning}`
+          );
+        }
+
+        if (error !== undefined && (typeof error !== 'number' || error <= 0)) {
+          throw new Error(
+            `Invalid heightThresholds.error in profile "${profileName}": must be a positive number, got ${error}`
+          );
+        }
+
+        // Check ascending order
+        if (info !== undefined && warning !== undefined && info >= warning) {
+          throw new Error(
+            `Invalid heightThresholds in profile "${profileName}": info (${info}) must be less than warning (${warning})`
+          );
+        }
+
+        if (warning !== undefined && error !== undefined && warning > error) {
+          throw new Error(
+            `Invalid heightThresholds in profile "${profileName}": warning (${warning}) must be less than or equal to error (${error})`
+          );
+        }
+
+        // Check error threshold matches maxHeight if specified
+        if (error !== undefined && error !== profile.maxHeight) {
+          throw new Error(
+            `Invalid heightThresholds.error in profile "${profileName}": must match maxHeight (${profile.maxHeight}), got ${error}`
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
  * Merges user configuration with defaults
  *
  * @param userConfig - User-provided partial configuration
  * @returns Complete configuration with defaults
  */
 function mergeConfig(userConfig: PartialConfig): Config {
+  // Validate before merging
+  validateViewportConfig(userConfig);
+
   return {
     viewport: {
       ...defaultConfig.viewport,

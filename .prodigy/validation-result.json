@@ -1,56 +1,47 @@
 {
-  "completion_percentage": 70.0,
+  "completion_percentage": 95.0,
   "status": "incomplete",
   "implemented": [
-    "ViewportProfile and ViewportConfig types added to config/types.ts",
-    "Built-in viewport profiles created (default, mkdocs, docusaurus, github, mobile) in viewport-profiles.ts",
-    "Viewport resolution logic implemented in viewport-resolver.ts with correct priority order",
-    "Config loader updated to merge viewport configuration in loader.ts",
-    "CLI flags added: --viewport-profile, --max-width, --max-height in cli.ts",
-    "Rules registry updated to apply viewport config to width/height rules in rules/index.ts",
-    "Viewport types and functions exported from config/index.ts",
-    "Backward compatibility maintained - existing configs work without viewport settings",
-    "All existing tests pass (215 tests)",
-    "README.md mentions viewport readability features",
-    "Basic configuration tests exist in tests/unit/config.test.ts"
+    "ViewportProfile and ViewportConfig types defined in src/config/types.ts",
+    "Built-in viewport profiles created (default, mkdocs, docusaurus, github, mobile) in src/config/viewport-profiles.ts",
+    "Viewport resolution logic implemented in src/config/viewport-resolver.ts with correct priority order",
+    "CLI flags added: --viewport-profile, --max-width, --max-height in src/cli.ts",
+    "Configuration loader updated to merge viewport configuration in src/config/loader.ts",
+    "Viewport configuration exported from src/config/index.ts",
+    "Rules updated to use resolved viewport configuration in src/rules/index.ts",
+    "Comprehensive viewport documentation added to docs/configuration.md (lines 272-500+)",
+    "Rule documentation updated with viewport configuration details in docs/rules.md (lines 554, 593, 854, 893)",
+    "Unit tests created for viewport configuration (tests/unit/viewport.test.ts - 349 lines)",
+    "Integration tests created for CLI viewport support (tests/integration/viewport.test.ts - 212 lines)",
+    "Real-world example tests created (tests/integration/ripgrep-example.test.ts - 173 lines)",
+    "Test fixture created for ripgrep example (tests/fixtures/ripgrep-count-list.md)",
+    "Backward compatibility maintained - existing configurations work without modification",
+    "Documentation includes examples for MkDocs, Docusaurus, GitHub, and mobile frameworks",
+    "Documentation clearly explains max-width/max-height as error thresholds"
   ],
   "missing": [
-    "Dedicated 'Viewport Configuration' section in docs/configuration.md",
-    "Viewport-specific unit tests (profile selection, resolution logic, CLI overrides)",
-    "Integration tests verifying viewport constraints are applied during analysis",
-    "Real-world ripgrep example test case (mkdocs profile)",
-    "Rule documentation explaining viewport configuration options for horizontal-width-readability and vertical-height-readability"
+    "Fix 2 unit test failures in tests/unit/viewport.test.ts related to threshold inheritance when maxWidth/maxHeight overrides are provided",
+    "Fix 7 integration test failures in tests/integration/viewport.test.ts and tests/integration/ripgrep-example.test.ts - tests need to handle CLI exit code 1 when errors are detected",
+    "Configuration validation with clear error messages for invalid viewport values (optional - nice to have)"
   ],
   "gaps": {
-    "missing_viewport_config_documentation": {
-      "description": "docs/configuration.md does not have a dedicated 'Viewport Configuration' section as required by acceptance criteria. The spec explicitly requires: 'Configuration guide (docs/configuration.md) has dedicated section on viewport constraints'",
-      "location": "docs/configuration.md",
-      "severity": "high",
-      "suggested_fix": "Add a 'Viewport Configuration' section after 'Rule Configuration' section explaining:\n1. How to configure viewport profiles\n2. Built-in profiles (mkdocs, docusaurus, github, mobile, default)\n3. How to create custom profiles\n4. CLI flag usage (--viewport-profile, --max-width, --max-height)\n5. Examples for common frameworks\n6. Priority order of configuration sources"
-    },
-    "missing_viewport_unit_tests": {
-      "description": "No unit tests specifically for viewport functionality. Spec requires: 'Unit tests verify configuration loading and merging behavior'",
-      "location": "tests/unit/",
-      "severity": "high",
-      "suggested_fix": "Create tests/unit/viewport.test.ts with tests for:\n1. resolveViewportConfig with different priority sources (CLI > config > profile > default)\n2. Built-in profile selection\n3. Custom profile definition and merging\n4. CLI override behavior\n5. Threshold calculation from profiles\n6. Invalid profile handling"
-    },
-    "missing_viewport_integration_tests": {
-      "description": "No integration tests verifying viewport constraints are applied correctly. Spec requires: 'Integration tests verify viewport constraints are applied correctly during analysis'",
-      "location": "tests/integration/",
-      "severity": "high",
-      "suggested_fix": "Create tests/integration/viewport.test.ts with tests for:\n1. Analyzing diagrams with different viewport profiles\n2. Verifying mkdocs profile catches wider diagrams\n3. Verifying CLI overrides work end-to-end\n4. Testing profile application affects rule severity"
-    },
-    "missing_ripgrep_example_test": {
-      "description": "No real-world ripgrep example test. Spec requires: 'Real-world example: ripgrep count-list.md diagram triggers error with mkdocs profile but passes with default'",
-      "location": "tests/",
+    "unit_test_threshold_inheritance": {
+      "description": "Two unit tests fail because threshold error values are not updated when maxWidth/maxHeight CLI overrides are provided. Tests expect error threshold to match the new maxWidth (e.g., 1000) but receive the default profile's error threshold (e.g., 2500).",
+      "location": "tests/unit/viewport.test.ts:202-204 and similar",
       "severity": "medium",
-      "suggested_fix": "Create a test that:\n1. Uses a diagram similar to ripgrep's count-list.md (LR layout, 16 nodes, longest chain 6)\n2. Verifies it passes with default profile (2500px max width)\n3. Verifies it fails/warns with mkdocs profile (800px max width)\n4. Documents this as the canonical real-world example"
+      "suggested_fix": "Update viewport-resolver.ts to recalculate error thresholds when CLI maxWidth/maxHeight overrides are provided, ensuring widthThresholds.error matches maxWidth and heightThresholds.error matches maxHeight."
     },
-    "incomplete_rule_documentation": {
-      "description": "docs/rules.md mentions viewport but doesn't explain how to configure viewport options for the width/height rules. Spec requires: 'Rule documentation (docs/rules.md) explains viewport configuration options'",
-      "location": "docs/rules.md",
-      "severity": "medium",
-      "suggested_fix": "Update horizontal-width-readability and vertical-height-readability rule documentation to explain:\n1. How viewport profiles affect these rules\n2. How to use --max-width and --max-height CLI flags\n3. How to configure viewport profiles in .sonarrc.json\n4. Examples of using mkdocs profile for documentation sites\n5. Reference to the Viewport Configuration section in configuration.md"
+    "integration_test_exit_code_handling": {
+      "description": "Integration tests fail because they don't handle the expected behavior where CLI returns exit code 1 when diagram errors are detected. The tests use execAsync which throws on non-zero exit codes.",
+      "location": "tests/integration/viewport.test.ts:30-66 and tests/integration/ripgrep-example.test.ts",
+      "severity": "low",
+      "suggested_fix": "Wrap execAsync calls in try-catch blocks to handle exit code 1 as an expected outcome when testing viewport profiles that should detect errors. Verify that errors are reported in stdout/stderr rather than expecting exit code 0."
+    },
+    "missing_config_validation": {
+      "description": "No explicit validation for invalid viewport configuration values (e.g., negative widths, non-numeric values). The spec requires 'Configuration validation detects invalid values and provides clear error messages'.",
+      "location": "src/config/loader.ts or src/config/viewport-resolver.ts",
+      "severity": "low",
+      "suggested_fix": "Add validation in config loader to check: maxWidth/maxHeight are positive numbers, thresholds are in ascending order (info < warning < error), error thresholds match or are less than max dimensions. Throw helpful errors with examples when validation fails."
     }
   }
 }
