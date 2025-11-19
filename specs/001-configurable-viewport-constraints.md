@@ -39,6 +39,29 @@ Currently, users must either:
 
 Enable users to easily configure viewport width and height constraints to match their specific rendering context, ensuring accurate diagram readability validation for their actual deployment environment.
 
+## How It Works
+
+Mermaid-Sonar **estimates the required width and height** of each diagram based on:
+- Layout direction (LR/RL/TD/TB)
+- Number of nodes and longest chain length
+- Label lengths and estimated text rendering size
+- Node spacing and layout calculations
+
+The configured **max-width and max-height are hard limits**:
+- If a diagram's estimated width exceeds `maxWidth` → **ERROR**
+- If a diagram's estimated height exceeds `maxHeight` → **ERROR**
+
+**Example**:
+```bash
+# Set hard limit: diagrams needing > 800px width will ERROR
+mermaid-sonar --max-width 800 docs/
+
+# Result for diagram estimated at 1100px width:
+❌ ERROR: Diagram width (1100px) exceeds 800px maximum
+```
+
+This ensures diagrams are validated against the **actual available space** in your rendering context, not generic browser viewport assumptions.
+
 ## Requirements
 
 ### Functional Requirements
@@ -60,18 +83,21 @@ Enable users to easily configure viewport width and height constraints to match 
 
 ## Acceptance Criteria
 
-- [ ] Users can configure viewport width in `.sonarrc.json` with `targetWidth` and threshold values
-- [ ] Users can configure viewport height in `.sonarrc.json` with `targetHeight` and threshold values
+- [ ] Users can configure viewport width in `.sonarrc.json` with `maxWidth` as the error threshold
+- [ ] Users can configure viewport height in `.sonarrc.json` with `maxHeight` as the error threshold
 - [ ] Configuration supports defining named viewport profiles (e.g., "mkdocs", "github", "default")
 - [ ] CLI accepts `--viewport-profile <name>` flag to select a predefined profile
-- [ ] CLI accepts `--target-width <pixels>` and `--target-height <pixels>` flags for ad-hoc overrides
+- [ ] CLI accepts `--max-width <pixels>` flag that sets the error threshold (diagrams exceeding this width will error)
+- [ ] CLI accepts `--max-height <pixels>` flag that sets the error threshold (diagrams exceeding this height will error)
 - [ ] Existing configurations without viewport settings continue using current defaults
 - [ ] Configuration validation detects invalid values and provides clear error messages
 - [ ] Documentation includes examples for MkDocs, Docusaurus, GitBook, GitHub, and other common frameworks
+- [ ] Documentation clearly explains that max-width/max-height are hard limits that trigger errors when exceeded
 - [ ] Rule documentation (docs/rules.md) explains viewport configuration options
 - [ ] Configuration guide (docs/configuration.md) has dedicated section on viewport constraints
 - [ ] Unit tests verify configuration loading and merging behavior
 - [ ] Integration tests verify viewport constraints are applied correctly during analysis
+- [ ] Real-world example: ripgrep count-list.md diagram triggers error with mkdocs profile but passes with default
 
 ## Technical Details
 
@@ -86,17 +112,21 @@ Extend the configuration schema to support viewport profiles:
 export interface ViewportProfile {
   name: string;
   description?: string;
-  targetWidth: number;
-  targetHeight: number;
+  /** Maximum width in pixels - diagrams exceeding this will ERROR */
+  maxWidth: number;
+  /** Maximum height in pixels - diagrams exceeding this will ERROR */
+  maxHeight: number;
+  /** Optional granular thresholds for info/warning levels */
   widthThresholds?: {
     info?: number;
     warning?: number;
-    error?: number;
+    error?: number;  // Should match maxWidth if specified
   };
+  /** Optional granular thresholds for info/warning levels */
   heightThresholds?: {
     info?: number;
     warning?: number;
-    error?: number;
+    error?: number;  // Should match maxHeight if specified
   };
 }
 
@@ -113,8 +143,9 @@ export interface Config {
     profiles?: Record<string, ViewportProfile>;
 
     // Direct overrides (takes precedence over profile)
-    targetWidth?: number;
-    targetHeight?: number;
+    // These set the ERROR threshold - diagrams exceeding these dimensions will error
+    maxWidth?: number;
+    maxHeight?: number;
   };
 }
 ```
@@ -129,42 +160,42 @@ export const builtInViewportProfiles: Record<string, ViewportProfile> = {
   'default': {
     name: 'default',
     description: 'Standard browser viewport',
-    targetWidth: 1200,
-    targetHeight: 800,
+    maxWidth: 2500,      // ERROR if diagram needs > 2500px width
+    maxHeight: 2000,     // ERROR if diagram needs > 2000px height
     widthThresholds: { info: 1500, warning: 2000, error: 2500 },
     heightThresholds: { info: 800, warning: 1200, error: 2000 }
   },
   'mkdocs': {
     name: 'mkdocs',
-    description: 'MkDocs documentation framework with sidebar',
-    targetWidth: 800,
-    targetHeight: 800,
-    widthThresholds: { info: 800, warning: 1000, error: 1200 },
-    heightThresholds: { info: 800, warning: 1200, error: 2000 }
+    description: 'MkDocs documentation framework with sidebar (~800-900px content width)',
+    maxWidth: 800,       // ERROR if diagram needs > 800px width
+    maxHeight: 1500,     // ERROR if diagram needs > 1500px height
+    widthThresholds: { info: 600, warning: 700, error: 800 },
+    heightThresholds: { info: 1000, warning: 1200, error: 1500 }
   },
   'docusaurus': {
     name: 'docusaurus',
-    description: 'Docusaurus documentation framework',
-    targetWidth: 900,
-    targetHeight: 800,
-    widthThresholds: { info: 900, warning: 1200, error: 1500 },
-    heightThresholds: { info: 800, warning: 1200, error: 2000 }
+    description: 'Docusaurus documentation framework (~900-1000px content width)',
+    maxWidth: 900,       // ERROR if diagram needs > 900px width
+    maxHeight: 1500,     // ERROR if diagram needs > 1500px height
+    widthThresholds: { info: 700, warning: 800, error: 900 },
+    heightThresholds: { info: 1000, warning: 1200, error: 1500 }
   },
   'github': {
     name: 'github',
-    description: 'GitHub README and markdown files',
-    targetWidth: 1000,
-    targetHeight: 800,
-    widthThresholds: { info: 1000, warning: 1400, error: 1800 },
-    heightThresholds: { info: 800, warning: 1200, error: 2000 }
+    description: 'GitHub README and markdown files (~1000px content width)',
+    maxWidth: 1000,      // ERROR if diagram needs > 1000px width
+    maxHeight: 1800,     // ERROR if diagram needs > 1800px height
+    widthThresholds: { info: 800, warning: 900, error: 1000 },
+    heightThresholds: { info: 1200, warning: 1500, error: 1800 }
   },
   'mobile': {
     name: 'mobile',
-    description: 'Mobile device constraints',
-    targetWidth: 400,
-    targetHeight: 600,
-    widthThresholds: { info: 400, warning: 500, error: 600 },
-    heightThresholds: { info: 600, warning: 800, error: 1000 }
+    description: 'Mobile device constraints (400px width)',
+    maxWidth: 400,       // ERROR if diagram needs > 400px width
+    maxHeight: 800,      // ERROR if diagram needs > 800px height
+    widthThresholds: { info: 300, warning: 350, error: 400 },
+    heightThresholds: { info: 600, warning: 700, error: 800 }
   }
 };
 ```
@@ -173,11 +204,13 @@ export const builtInViewportProfiles: Record<string, ViewportProfile> = {
 
 Priority order for resolving viewport constraints:
 
-1. CLI flags (`--target-width`, `--target-height`) - highest priority
-2. Config file direct overrides (`viewport.targetWidth`, `viewport.targetHeight`)
-3. Selected profile (`viewport.profile` or `--viewport-profile`)
-4. Rule-level configuration (backward compatibility)
+1. CLI flags (`--max-width`, `--max-height`) - highest priority, sets ERROR threshold
+2. Config file direct overrides (`viewport.maxWidth`, `viewport.maxHeight`) - sets ERROR threshold
+3. Selected profile (`viewport.profile` or `--viewport-profile`) - uses profile's maxWidth/maxHeight
+4. Rule-level configuration (backward compatibility) - uses rule's targetWidth/targetHeight
 5. Default profile - lowest priority
+
+**Important**: When `--max-width` or `--max-height` are specified, they directly set the error threshold. Diagrams that require more than these dimensions to render properly will produce an ERROR.
 
 **4. CLI Flag Support**
 
@@ -190,8 +223,10 @@ export interface CliOptions {
 
   // New viewport options
   viewportProfile?: string;
-  targetWidth?: number;
-  targetHeight?: number;
+  /** Maximum width in pixels - diagrams exceeding this will ERROR */
+  maxWidth?: number;
+  /** Maximum height in pixels - diagrams exceeding this will ERROR */
+  maxHeight?: number;
 }
 ```
 
@@ -229,18 +264,23 @@ export const horizontalWidthReadabilityRule: Rule = {
 ```typescript
 // Resolved viewport configuration passed to rules
 interface ResolvedViewportConfig {
-  targetWidth: number;
-  targetHeight: number;
+  /** Maximum allowed width - diagrams exceeding this will ERROR */
+  maxWidth: number;
+  /** Maximum allowed height - diagrams exceeding this will ERROR */
+  maxHeight: number;
+  /** Granular thresholds for progressive severity levels */
   widthThresholds: {
-    info: number;
-    warning: number;
-    error: number;
+    info: number;     // Diagram approaching width limit
+    warning: number;  // Diagram significantly wide
+    error: number;    // Diagram exceeds max width (same as maxWidth)
   };
+  /** Granular thresholds for progressive severity levels */
   heightThresholds: {
-    info: number;
-    warning: number;
-    error: number;
+    info: number;     // Diagram approaching height limit
+    warning: number;  // Diagram significantly tall
+    error: number;    // Diagram exceeds max height (same as maxHeight)
   };
+  /** Source of the configuration for debugging */
   source: 'cli' | 'config-direct' | 'profile' | 'rule' | 'default';
 }
 ```
@@ -270,30 +310,30 @@ interface ResolvedViewportConfig {
 }
 ```
 
-**Example 2: Custom Viewport with Thresholds**
+**Example 2: Custom Viewport with Hard Limits**
 
 `.sonarrc.json`:
 ```json
 {
   "mermaid-sonar": {
     "viewport": {
-      "targetWidth": 750,
-      "targetHeight": 900,
+      "maxWidth": 750,
+      "maxHeight": 900,
       "profiles": {
         "custom-docs": {
           "name": "custom-docs",
-          "description": "Our custom documentation site",
-          "targetWidth": 750,
-          "targetHeight": 900,
+          "description": "Our custom documentation site (750px content width)",
+          "maxWidth": 750,
+          "maxHeight": 900,
           "widthThresholds": {
-            "info": 750,
-            "warning": 900,
-            "error": 1100
+            "info": 600,
+            "warning": 700,
+            "error": 750
           },
           "heightThresholds": {
-            "info": 900,
-            "warning": 1300,
-            "error": 1800
+            "info": 700,
+            "warning": 800,
+            "error": 900
           }
         }
       },
@@ -309,8 +349,11 @@ interface ResolvedViewportConfig {
 # Use built-in profile
 mermaid-sonar --viewport-profile mkdocs docs/
 
-# Ad-hoc override
-mermaid-sonar --target-width 800 --target-height 1000 docs/
+# Ad-hoc hard limits (diagrams exceeding these will ERROR)
+mermaid-sonar --max-width 800 --max-height 1000 docs/
+
+# Override just width
+mermaid-sonar --max-width 700 docs/
 
 # Combine with other options
 mermaid-sonar --viewport-profile github --strict docs/
@@ -501,9 +544,19 @@ Users can adopt viewport profiles incrementally:
 
 ## Example Use Cases
 
-### Use Case 1: ripgrep Documentation with MkDocs
+### Use Case 1: ripgrep Documentation with MkDocs (Real Example)
 
-**Problem**: ripgrep's MkDocs site has ~800px content width, but diagrams are validated against 1200px default.
+**Problem**: ripgrep's MkDocs site has ~800px content width, but diagrams are validated against 2500px default error threshold.
+
+**Specific Example**: `../ripgrep/docs/basics/count-list.md` contains a flowchart LR diagram with 16 nodes and a longest chain of 6 nodes. The estimated width is ~1100px.
+
+**Current Behavior**:
+```bash
+$ mermaid-sonar ../ripgrep/docs/basics/count-list.md
+✓ No issues found
+```
+
+But when rendered in MkDocs with 800px content width, this diagram requires horizontal scrolling and is not very readable.
 
 **Solution**:
 ```json
@@ -516,7 +569,14 @@ Users can adopt viewport profiles incrementally:
 }
 ```
 
-**Result**: Diagrams are now validated against 800px width, catching readability issues before deployment.
+**Result with mkdocs profile**:
+```bash
+$ mermaid-sonar --viewport-profile mkdocs ../ripgrep/docs/basics/count-list.md
+❌ Diagram width (~1100px) exceeds 800px limit
+   → Consider converting to TD layout or splitting into multiple diagrams
+```
+
+The diagram is now correctly flagged as problematic for the MkDocs rendering context.
 
 ### Use Case 2: Multi-Context Documentation
 
