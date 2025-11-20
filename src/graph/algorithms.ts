@@ -231,6 +231,78 @@ function isLinearNode(node: string, graph: GraphRepresentation): boolean {
 }
 
 /**
+ * Calculates the longest path through a DAG (or general graph with cycle detection)
+ *
+ * This finds the longest path considering all nodes and edges, including:
+ * - Decision branches (nodes with multiple children)
+ * - Merge points (nodes with multiple parents)
+ *
+ * Algorithm:
+ * 1. Find all potential start points (roots or nodes with few parents)
+ * 2. DFS from each start point, tracking visited nodes to avoid cycles
+ * 3. Return the longest path found across all attempts
+ *
+ * Time Complexity: O(V + E) for DAGs, O(V * (V + E)) for graphs with cycles
+ *
+ * @param graph - Graph representation
+ * @returns Analysis of longest path through the graph
+ */
+export function calculateLongestPath(graph: GraphRepresentation): ChainAnalysis {
+  if (graph.nodes.length === 0) {
+    return { length: 0, path: [], ratio: 0, isLinear: false };
+  }
+
+  let longestPath: string[] = [];
+
+  /**
+   * DFS to find longest path from a given start node
+   */
+  function dfs(node: string, currentPath: string[], visited: Set<string>): void {
+    // Cycle detection - stop if we've visited this node in current path
+    if (visited.has(node)) return;
+
+    const newPath = [...currentPath, node];
+    const newVisited = new Set(visited);
+    newVisited.add(node);
+
+    // Update longest path if current path is longer
+    if (newPath.length > longestPath.length) {
+      longestPath = newPath;
+    }
+
+    // Explore all children
+    const children = graph.adjacencyList.get(node) || [];
+    for (const child of children) {
+      dfs(child, newPath, newVisited);
+    }
+  }
+
+  // Try starting from root nodes first (most likely to have longest paths)
+  const roots = findRootNodes(graph);
+  for (const root of roots) {
+    dfs(root, [], new Set());
+  }
+
+  // If no roots (circular graph) or roots didn't find good paths, try all nodes
+  if (roots.length === 0 || longestPath.length < graph.nodes.length * 0.3) {
+    for (const node of graph.nodes) {
+      dfs(node, [], new Set());
+    }
+  }
+
+  const length = longestPath.length;
+  const ratio = length / graph.nodes.length;
+  const isLinear = ratio > 0.6 && longestPath.every((node) => isLinearNode(node, graph));
+
+  return {
+    length,
+    path: longestPath,
+    ratio,
+    isLinear,
+  };
+}
+
+/**
  * Calculates the longest linear chain in a graph
  *
  * A linear chain is a sequence of nodes where each node has:

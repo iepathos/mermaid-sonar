@@ -11,6 +11,7 @@ import {
   findComponents,
   calculateSpine,
   calculateLongestLinearChain,
+  calculateLongestPath,
 } from '../../src/graph/algorithms';
 import type { Diagram } from '../../src/extractors/types';
 
@@ -396,6 +397,267 @@ describe('Graph Algorithms', () => {
       // A, B, D are linear (single nodes)
       expect(chain.length).toBe(1);
       expect(chain.isLinear).toBe(false);
+    });
+  });
+
+  describe('Longest Path Calculation', () => {
+    it('should return length 0 for empty graph', () => {
+      const diagram: Diagram = {
+        content: `graph TD`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      expect(path.length).toBe(0);
+      expect(path.path).toEqual([]);
+      expect(path.ratio).toBe(0);
+      expect(path.isLinear).toBe(false);
+    });
+
+    it('should find longest path in simple linear chain', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> B
+          B --> C
+          C --> D
+          D --> E`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      expect(path.length).toBe(5);
+      expect(path.path).toEqual(['A', 'B', 'C', 'D', 'E']);
+      expect(path.ratio).toBe(1.0);
+      expect(path.isLinear).toBe(true);
+    });
+
+    it('should find longest path through branching flowchart (decision diamond)', () => {
+      const diagram: Diagram = {
+        content: `flowchart LR
+          Start --> Decision{Check?}
+          Decision -->|Yes| PathA
+          Decision -->|No| PathB
+          PathA --> End
+          PathB --> End`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'flowchart',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Longest path: Start -> Decision -> PathA/PathB -> End = 4 nodes
+      expect(path.length).toBe(4);
+      expect(path.path[0]).toBe('Start');
+      expect(path.path[path.path.length - 1]).toBe('End');
+      expect(path.isLinear).toBe(false); // Has branching
+    });
+
+    it('should find longest path through merge points', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> C
+          B --> C
+          C --> D
+          D --> E`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Longest path: A -> C -> D -> E = 4 nodes
+      // (or B -> C -> D -> E = 4 nodes)
+      expect(path.length).toBe(4);
+      expect(path.path).toContain('C');
+      expect(path.path).toContain('D');
+      expect(path.path).toContain('E');
+      expect(path.isLinear).toBe(false); // C has multiple parents
+    });
+
+    it('should find longest path in ripgrep Quick Start flowchart pattern', () => {
+      const diagram: Diagram = {
+        content: `flowchart LR
+          Start --> HasSpecial{Pattern has chars?}
+          HasSpecial -->|Yes| WantRegex{Want regex?}
+          HasSpecial -->|No| CaseQ
+          WantRegex -->|Yes| CaseQ
+          WantRegex -->|No| UseLiteral
+          UseLiteral --> Done
+          CaseQ --> KnowCase{Know case?}
+          KnowCase -->|Yes| UseDefault
+          KnowCase -->|No| UseCaseFlag
+          UseDefault --> BoundaryQ{Need boundaries?}
+          UseCaseFlag --> BoundaryQ
+          BoundaryQ -->|Yes| UseWord
+          BoundaryQ -->|No| Done
+          UseWord --> Done`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'flowchart',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Longest path should be something like:
+      // Start -> HasSpecial -> WantRegex -> CaseQ -> KnowCase -> UseDefault -> BoundaryQ -> UseWord -> Done
+      // = 9 nodes
+      expect(path.length).toBeGreaterThanOrEqual(8);
+      expect(path.path[0]).toBe('Start');
+      expect(path.path[path.path.length - 1]).toBe('Done');
+    });
+
+    it('should find longest path in ripgrep filtering flowchart pattern', () => {
+      const diagram: Diagram = {
+        content: `flowchart LR
+          Start --> Explicit{Specified?}
+          Explicit -->|Yes| Search
+          Explicit -->|No| Hidden{Hidden?}
+          Hidden -->|Yes| HiddenFlag{--hidden?}
+          HiddenFlag -->|No| Skip1
+          HiddenFlag -->|Yes| Ignore
+          Hidden -->|No| Ignore{Matches ignore?}
+          Ignore -->|Yes| IgnoreFlag{--no-ignore?}
+          IgnoreFlag -->|No| Skip2
+          IgnoreFlag -->|Yes| Binary
+          Ignore -->|No| Binary{Binary?}
+          Binary -->|Yes| BinaryFlag{--binary?}
+          BinaryFlag -->|No| Skip3
+          BinaryFlag -->|Yes| Search
+          Binary -->|No| Search`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'flowchart',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Longest path should be:
+      // Start -> Explicit -> Hidden -> HiddenFlag -> Ignore -> IgnoreFlag -> Binary -> BinaryFlag -> Search
+      // = 8-9 nodes
+      expect(path.length).toBeGreaterThanOrEqual(7);
+      expect(path.path[0]).toBe('Start');
+    });
+
+    it('should handle circular graphs with cycle detection', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> B
+          B --> C
+          C --> A
+          C --> D`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Should find A -> B -> C -> D (4 nodes) without infinite loop
+      expect(path.length).toBeGreaterThanOrEqual(3);
+      expect(path.path).not.toHaveLength(0);
+    });
+
+    it('should find longest path in disconnected graph', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> B
+          B --> C
+          D --> E
+          E --> F
+          F --> G
+          G --> H
+          X --> Y`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Should find the longest path: D -> E -> F -> G -> H (5 nodes)
+      expect(path.length).toBe(5);
+      expect(path.path).toEqual(['D', 'E', 'F', 'G', 'H']);
+    });
+
+    it('should handle complex branching with multiple merge points', () => {
+      const diagram: Diagram = {
+        content: `graph TD
+          A --> B
+          A --> C
+          B --> D
+          C --> D
+          D --> E
+          E --> F
+          E --> G
+          F --> H
+          G --> H`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      // Longest path: A -> B -> D -> E -> F -> H = 6 nodes
+      // (or A -> C -> D -> E -> G -> H = 6 nodes)
+      expect(path.length).toBe(6);
+      expect(path.path[0]).toBe('A');
+      expect(path.path[path.path.length - 1]).toBe('H');
+    });
+
+    it('should mark path as non-linear when it contains branches or merges', () => {
+      const diagram: Diagram = {
+        content: `flowchart LR
+          A --> B
+          B --> C
+          C --> D
+          C --> E`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'flowchart',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      expect(path.length).toBe(4); // A -> B -> C -> D or E
+      expect(path.isLinear).toBe(false); // C has multiple children
+    });
+
+    it('should mark simple linear path as isLinear=true', () => {
+      const diagram: Diagram = {
+        content: `graph LR
+          A --> B
+          B --> C
+          C --> D`,
+        startLine: 1,
+        filePath: 'test.md',
+        type: 'graph',
+      };
+
+      const graph = buildGraph(diagram);
+      const path = calculateLongestPath(graph);
+
+      expect(path.length).toBe(4);
+      expect(path.isLinear).toBe(true);
+      expect(path.ratio).toBe(1.0);
     });
   });
 });

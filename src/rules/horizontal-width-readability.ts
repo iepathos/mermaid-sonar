@@ -13,7 +13,7 @@ import type { Diagram } from '../extractors/types';
 import type { Metrics } from '../analyzers/types';
 import type { LayoutDirection, GraphRepresentation } from '../graph/types';
 import { buildGraph } from '../graph/adjacency';
-import { calculateLongestLinearChain } from '../graph/algorithms';
+import { calculateLongestPath } from '../graph/algorithms';
 
 /**
  * Label metrics extracted from diagram
@@ -133,9 +133,22 @@ function extractLabels(content: string): LabelMetrics {
     return { labels: [], avgLength: 0, maxLength: 0 };
   }
 
-  const totalLength = labels.reduce((sum, { label }) => sum + label.length, 0);
+  /**
+   * For multi-line labels, measure the longest line since that determines node width.
+   * Example: "Pattern has\nregex chars\n() [] . * + ?" has 3 lines, width = longest line
+   */
+  function getEffectiveLabelLength(label: string): number {
+    const lines = label.split('\n');
+    if (lines.length === 1) {
+      return label.length;
+    }
+    // For multi-line labels, use the longest line (trimmed)
+    return Math.max(...lines.map((line) => line.trim().length));
+  }
+
+  const totalLength = labels.reduce((sum, { label }) => sum + getEffectiveLabelLength(label), 0);
   const avgLength = Math.round(totalLength / labels.length);
-  const maxLength = Math.max(...labels.map(({ label }) => label.length));
+  const maxLength = Math.max(...labels.map(({ label }) => getEffectiveLabelLength(label)));
 
   return { labels, avgLength, maxLength };
 }
@@ -143,15 +156,15 @@ function extractLabels(content: string): LabelMetrics {
 /**
  * Estimates horizontal width based on layout and metrics
  *
- * For LR/RL layouts, uses the longest linear chain instead of total node count
- * for more accurate width estimation.
+ * For LR/RL layouts, uses the longest path through the graph (accounting for
+ * branches and merges) for accurate width estimation.
  *
  * @param layout - Layout direction
  * @param metrics - Pre-calculated metrics
  * @param labelMetrics - Label metrics
- * @param graph - Graph representation (for longest chain calculation)
+ * @param graph - Graph representation (for longest path calculation)
  * @param config - Rule configuration
- * @returns Estimated width in pixels and chain analysis
+ * @returns Estimated width in pixels and path analysis
  */
 function estimateWidth(
   layout: LayoutDirection,
@@ -165,16 +178,16 @@ function estimateWidth(
   const nodeSpacing = (config.nodeSpacing as number) ?? 50; // Mermaid default spacing
 
   if (layout === 'LR' || layout === 'RL') {
-    // Horizontal layouts: width = longest linear chain
-    // Use calculateLongestLinearChain for accurate sequential layout width
-    const chainAnalysis = calculateLongestLinearChain(graph);
+    // Horizontal layouts: width = longest path through graph
+    // Use calculateLongestPath to account for decision branches and merge points
+    const pathAnalysis = calculateLongestPath(graph);
     const width =
-      chainAnalysis.length * labelMetrics.avgLength * charWidth +
-      chainAnalysis.length * nodeSpacing;
+      pathAnalysis.length * labelMetrics.avgLength * charWidth +
+      pathAnalysis.length * nodeSpacing;
     return {
       width,
-      chainLength: chainAnalysis.length,
-      chainPath: chainAnalysis.path,
+      chainLength: pathAnalysis.length,
+      chainPath: pathAnalysis.path,
     };
   } else {
     // Vertical layouts: width = max branch width
@@ -258,7 +271,7 @@ function generateSuggestions(analysis: WidthAnalysis, metrics: Metrics): string 
   suggestions.push('Use abbreviations with a legend');
 
   const header = isHorizontal
-    ? `This ${analysis.layout} layout with longest chain of ${analysis.longestChainLength ?? metrics.nodeCount} nodes creates excessive width.\n` +
+    ? `This ${analysis.layout} layout with longest path of ${analysis.longestChainLength ?? metrics.nodeCount} nodes creates excessive width.\n` +
       `Estimated width: ${analysis.estimatedWidth}px (exceeds ${analysis.targetWidth}px safe limit by ${analysis.exceedsBy}px)\n\n`
     : `This ${analysis.layout} layout with ${metrics.maxBranchWidth} parallel branches creates excessive width.\n` +
       `Estimated width: ${analysis.estimatedWidth}px (exceeds ${analysis.targetWidth}px safe limit by ${analysis.exceedsBy}px)\n\n`;
@@ -296,14 +309,14 @@ export const horizontalWidthReadabilityRule: Rule = {
       return null;
     }
 
-    // Generate message with chain information for LR/RL layouts
+    // Generate message with path information for LR/RL layouts
     let message: string;
     if (layout === 'LR' || layout === 'RL') {
-      const chainInfo =
+      const pathInfo =
         analysis.longestChainLength && analysis.longestChainPath
-          ? ` (longest chain: ${analysis.longestChainPath.slice(0, 5).join(' → ')}${analysis.longestChainPath.length > 5 ? '...' : ''})`
+          ? ` (longest path: ${analysis.longestChainPath.slice(0, 5).join(' → ')}${analysis.longestChainPath.length > 5 ? '...' : ''})`
           : '';
-      message = `Diagram width (${analysis.estimatedWidth}px) exceeds viewport limit due to sequential nodes${chainInfo} and label length in ${layout} layout`;
+      message = `Diagram width (${analysis.estimatedWidth}px) exceeds viewport limit due to sequential nodes${pathInfo} and label length in ${layout} layout`;
     } else {
       message = `Diagram width (${analysis.estimatedWidth}px) exceeds viewport limit due to parallel branches and label length in ${layout} layout`;
     }

@@ -233,7 +233,7 @@ describe('Rule System', () => {
         expect(widthIssue).toBeUndefined();
       });
 
-      it('should include chain information in message for LR layouts', async () => {
+      it('should include path information in message for LR layouts', async () => {
         const diagrams = extractDiagramsFromFile('tests/fixtures/wide-lr-layout.md');
         const metrics = analyzeStructure(diagrams[0]);
 
@@ -241,8 +241,8 @@ describe('Rule System', () => {
         const widthIssue = issues.find((i) => i.rule === 'horizontal-width-readability');
 
         if (widthIssue) {
-          // Message should include chain path preview
-          expect(widthIssue.message).toContain('longest chain');
+          // Message should include path preview
+          expect(widthIssue.message).toContain('longest path');
         }
       });
     });
