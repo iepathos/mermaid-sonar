@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-11-19
+
+### Added
+- **Configurable Viewport Constraints** - Allow users to configure diagram width and height constraints for different rendering contexts
+  - ViewportProfile and ViewportConfig types for flexible configuration
+  - Five built-in viewport profiles:
+    - `default` - Standard web browser viewport (1200x800px)
+    - `mkdocs` - MkDocs Material theme constraints (1000x1000px)
+    - `docusaurus` - Docusaurus documentation constraints (1000x1200px)
+    - `github` - GitHub README rendering constraints (800x1000px)
+    - `mobile` - Mobile device viewport (375x667px)
+  - CLI flags for viewport configuration:
+    - `--viewport-profile` - Select built-in profile
+    - `--max-width` - Override maximum width (hard limit)
+    - `--max-height` - Override maximum height (hard limit)
+  - Viewport configuration validation with clear error messages
+  - Comprehensive documentation in README and configuration guide
+
+### Fixed
+- Viewport error thresholds now correctly inherit from maxWidth/maxHeight regardless of profile or override source
+- Integration test exit code handling for viewport violations
+- Config validation checks for invalid values (negative dimensions, non-numeric values, out-of-order thresholds)
+
+### Changed
+- Replaced `any` types with proper `ExecError` interface in integration tests for improved type safety
+
 ## [1.1.0] - 2025-11-17
 
 ### Added
