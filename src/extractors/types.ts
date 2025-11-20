@@ -5,7 +5,7 @@
 /**
  * Supported Mermaid diagram types
  */
-export type DiagramType = 'flowchart' | 'graph' | 'state' | 'class' | 'unknown';
+export type DiagramType = 'flowchart' | 'graph' | 'state' | 'class' | 'sequence' | 'unknown';
 
 /**
  * Represents a Mermaid diagram extracted from a markdown file

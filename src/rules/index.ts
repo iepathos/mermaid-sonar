@@ -22,6 +22,8 @@ import { horizontalChainLengthRule } from './horizontal-chain-length';
 import { horizontalWidthReadabilityRule } from './horizontal-width-readability';
 import { verticalHeightReadabilityRule } from './vertical-height-readability';
 import { classDiagramWidthRule } from './class-diagram-width';
+import { sequenceDiagramWidthRule } from './sequence-diagram-width';
+import { sequenceDiagramHeightRule } from './sequence-diagram-height';
 
 /**
  * Registry of all available rules
@@ -37,6 +39,8 @@ const ruleRegistry = new Map<string, Rule>([
   [horizontalWidthReadabilityRule.name, horizontalWidthReadabilityRule],
   [verticalHeightReadabilityRule.name, verticalHeightReadabilityRule],
   [classDiagramWidthRule.name, classDiagramWidthRule],
+  [sequenceDiagramWidthRule.name, sequenceDiagramWidthRule],
+  [sequenceDiagramHeightRule.name, sequenceDiagramHeightRule],
   [longLabelsRule.name, longLabelsRule],
   [reservedWordsRule.name, reservedWordsRule],
   [disconnectedRule.name, disconnectedRule],
