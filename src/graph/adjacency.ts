@@ -48,7 +48,8 @@ function extractEdges(content: string): Edge[] {
     // - [*] --> StateA (start state)
     // - StateA --> [*] (end state)
     // - StateA --> StateB : label (state diagram colon-labeled transition)
-    const edgePattern = /(\[\*\]|\w+)\s*(-->|==>|-.->|<-->)\s*(?:\|([^|]+)\|)?\s*(\[\*\]|\w+)(?:\s*:\s*(.+))?/g;
+    const edgePattern =
+      /(\[\*\]|\w+)\s*(-->|==>|-.->|<-->)\s*(?:\|([^|]+)\|)?\s*(\[\*\]|\w+)(?:\s*:\s*(.+))?/g;
     let match;
 
     while ((match = edgePattern.exec(trimmed)) !== null) {
