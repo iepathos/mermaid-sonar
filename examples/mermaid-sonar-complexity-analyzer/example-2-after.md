@@ -36,7 +36,7 @@ Files to Search"]
 
 ## Expected Validation Result
 
-When running `npx mermaid-sonar --viewport-profile docs` on this file:
+When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ```
 ✅ No width errors

@@ -65,7 +65,7 @@ with line numbers]
 
 ## Expected Validation Result
 
-When running `npx mermaid-sonar --viewport-profile docs` on this file:
+When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ```
 ❌ Complex diagram with excessive nodes

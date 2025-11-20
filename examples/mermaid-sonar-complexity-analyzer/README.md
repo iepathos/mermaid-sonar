@@ -10,17 +10,17 @@ From the mermaid-sonar project root:
 
 ```bash
 # Validate all examples
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/
 
 # See errors/warnings in "before" examples
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/*-before.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/*-before.md
 
 # See passing validation in "after" examples
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/*-after.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/*-after.md
 
 # Compare specific example before vs after
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/example-1-before.md
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/example-1-after.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/example-1-before.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/example-1-after.md
 ```
 
 ## Examples Overview
@@ -92,7 +92,7 @@ npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-anal
 ### Running on "Before" Files (Should Show Issues)
 
 ```bash
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/*-before.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/*-before.md
 ```
 
 **Expected output:**
@@ -105,7 +105,7 @@ npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-anal
 ### Running on "After" Files (Should Pass or Have Acceptable Warnings)
 
 ```bash
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/*-after.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/*-after.md
 ```
 
 **Expected output:**
@@ -118,7 +118,7 @@ npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-anal
 ### Running on "Alternative" Files (Zero Warnings)
 
 ```bash
-npx mermaid-sonar --viewport-profile docs examples/mermaid-sonar-complexity-analyzer/*-alternative.md
+npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-analyzer/*-alternative.md
 ```
 
 **Expected output:**
@@ -149,7 +149,7 @@ This repo demonstrates **two valid solutions** for Examples 2 and 3:
 - Files: `*-after-alternative.md`
 - Splits workflow into multiple smaller LR diagrams
 - Zero warnings (perfect validation)
-- **When to use**: Plenty of vertical space, tutorial-style docs, step-by-step explanation
+- **When to use**: Plenty of vertical space, tutorial-style mkdocs, step-by-step explanation
 
 Both approaches are correct - choose based on your documentation context.
 
@@ -177,7 +177,7 @@ The "after" diagram gets a layout hint suggesting LR instead of TD. This is expe
 
 The most important lesson from these examples:
 
-> Sometimes the "theoretically optimal" layout (LR for sequential flows) conflicts with real-world rendering constraints (800px documentation site content width). When in doubt for documentation, prioritize readability in the actual rendering environment.
+> Sometimes the "theoretically optimal" layout (LR for sequential flows) conflicts with real-world rendering constraints (800px MkDocs content width). When in doubt for documentation, prioritize readability in the actual rendering environment.
 
 This is why Example 3 uses TD layout despite the warning - it's the right choice for the target platform.
 
@@ -190,7 +190,7 @@ The blog post includes:
 - Detailed explanation of each fix strategy
 - Real-world results from fixing 87 diagrams in ripgrep documentation
 - Research-backed thresholds for complexity metrics
-- Platform-specific viewport profiles (documentation sites, GitHub, Confluence)
+- Platform-specific viewport profiles (MkDocs, GitHub, Confluence)
 
 ## Contributing
 

@@ -22,7 +22,7 @@ graph TD
 
 ## Expected Validation Result
 
-When running `npx mermaid-sonar --viewport-profile docs` on this file:
+When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ```
 ⚠️  Diagram width (712px) exceeds viewport limit due to parallel branches

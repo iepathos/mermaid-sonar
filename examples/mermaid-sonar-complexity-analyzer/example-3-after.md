@@ -41,7 +41,7 @@ flowchart TD
 
 ## Expected Validation Result
 
-When running `npx mermaid-sonar --viewport-profile docs` on this file:
+When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ```
 ✅ Cyclomatic complexity: 8 (well below threshold)
