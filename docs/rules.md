@@ -147,7 +147,7 @@ graph TD
 
 **Why it matters**:
 
-Mermaid's layout algorithm has O(n²) complexity. According to the [Mermaid official blog](https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections):
+Mermaid's layout algorithm has O(n²) complexity. According to the [Mermaid official blog](https://mkdocs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections):
 
 > "Flow charts are O(n²) complex, so don't go over 100 connections"
 
@@ -556,7 +556,7 @@ graph TD
 This rule uses viewport profiles to determine appropriate width thresholds for different rendering contexts. Configure viewport constraints to match your documentation framework:
 
 ```bash
-# Use MkDocs profile (800px max width)
+# Use mkdocs profile (800px max width)
 mermaid-sonar --viewport-profile mkdocs docs/
 
 # Override max width via CLI
@@ -856,7 +856,7 @@ graph LR
 This rule uses viewport profiles to determine appropriate height thresholds for different rendering contexts. Configure viewport constraints to match your documentation framework:
 
 ```bash
-# Use MkDocs profile (1500px max height)
+# Use mkdocs profile (1500px max height)
 mermaid-sonar --viewport-profile mkdocs docs/
 
 # Override max height via CLI
@@ -942,7 +942,7 @@ graph TD
 **How to fix**:
 
 1. **Use abbreviations**: `Auth Service` instead of `Authentication and Authorization Service`
-2. **Move details to docs**: Keep diagrams high-level, details in documentation
+2. **Move details to mkdocs**: Keep diagrams high-level, details in documentation
 3. **Break into multiple nodes**: Split complex steps into smaller nodes
 4. **Use concise phrasing**: `Validate Input` instead of `Validate and sanitize all user input data`
 
@@ -1181,7 +1181,7 @@ Use configuration cascading to override rules for specific directories:
 project/
 ├── .sonarrc.json          # Global config
 └── legacy-docs/
-    └── .sonarrc.json      # Relaxed rules for legacy docs
+    └── .sonarrc.json      # Relaxed rules for legacy mkdocs
 ```
 
 ## Research References
@@ -1192,7 +1192,7 @@ project/
 
 2. **Mermaid Performance**
    - MermaidChart Blog. "Flow charts are O(n²) complex, so don't go over 100 connections"
-   - URL: https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections
+   - URL: https://mkdocs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections
 
 3. **Cyclomatic Complexity**
    - McCabe, T. J. (1976). "A Complexity Measure"

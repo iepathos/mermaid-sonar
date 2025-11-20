@@ -189,23 +189,22 @@ describe('Viewport Configuration', () => {
       expect(resolved.widthThresholds.error).toBe(800);
     });
 
-    it('should inherit thresholds from default profile when maxWidth provided', () => {
+    it('should recalculate thresholds when maxWidth/maxHeight provided', () => {
       const config: ViewportConfig = {
         maxWidth: 1000,
         maxHeight: 1500,
       };
       const resolved = resolveViewportConfig(config, undefined);
 
-      // When direct maxWidth/maxHeight provided without profile, starts from default profile
-      // Inherits default profile's thresholds (1500/2000/2500 and 800/1200/2000)
-      // Then error gets updated to maxWidth/maxHeight
-      expect(resolved.widthThresholds.info).toBe(1500); // From default profile
-      expect(resolved.widthThresholds.warning).toBe(2000); // From default profile
-      expect(resolved.widthThresholds.error).toBe(1000); // Updated to maxWidth
+      // When direct maxWidth/maxHeight provided, thresholds are recalculated
+      // based on the new max values (60%, 80%, 100%)
+      expect(resolved.widthThresholds.info).toBe(600); // 1000 * 0.6
+      expect(resolved.widthThresholds.warning).toBe(800); // 1000 * 0.8
+      expect(resolved.widthThresholds.error).toBe(1000); // maxWidth
 
-      expect(resolved.heightThresholds.info).toBe(800); // From default profile
-      expect(resolved.heightThresholds.warning).toBe(1200); // From default profile
-      expect(resolved.heightThresholds.error).toBe(1500); // Updated to maxHeight
+      expect(resolved.heightThresholds.info).toBe(900); // 1500 * 0.6
+      expect(resolved.heightThresholds.warning).toBe(1200); // 1500 * 0.8
+      expect(resolved.heightThresholds.error).toBe(1500); // maxHeight
     });
 
     it('should use custom profile thresholds as-is', () => {

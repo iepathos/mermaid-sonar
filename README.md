@@ -81,7 +81,7 @@ Analyzing Mermaid diagrams...
    Wide tree diagram with 12 parallel branches (>8 max)
    → Consider using 'graph LR' or split into multiple diagrams
 
-⚠️  docs/workflow.md:156
+⚠️ docs/workflow.md:156
    Complex diagram with 85 nodes
    → Consider breaking into focused sub-diagrams
 
@@ -538,7 +538,7 @@ Create `.sonarrc.json`, `.sonarrc.yaml`, or add to `package.json`:
 | Rule | Default | Research Basis |
 |------|---------|----------------|
 | `max-nodes` | 50/100 | [Cognitive load research](https://arxiv.org/abs/2008.07944) |
-| `max-edges` | 100 | [Mermaid O(n²) docs](https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections) |
+| `max-edges` | 100 | [Mermaid O(n²) mkdocs](https://mkdocs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections) |
 | `graph-density` | 0.3 | Graph theory best practices |
 | `cyclomatic-complexity` | 15 | Software engineering standards |
 | `max-branch-width` | 8 | Visual hierarchy research |
@@ -554,7 +554,7 @@ See [docs/rules.md](./docs/rules.md) for detailed rule documentation.
 All thresholds are based on published research:
 
 - **Node limits**: "[Scalability of Network Visualisation from a Cognitive Load Perspective](https://arxiv.org/abs/2008.07944)" - Study showing 50-node limit for high-density graphs
-- **Connection limit**: [Mermaid official blog](https://docs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections) - O(n²) complexity warning
+- **Connection limit**: [Mermaid official blog](https://mkdocs.mermaidchart.com/blog/posts/flow-charts-are-on2-complex-so-dont-go-over-100-connections) - O(n²) complexity warning
 - **Cyclomatic complexity**: McCabe's original research on code complexity
 
 ## Development

@@ -351,10 +351,10 @@ Define custom profiles for your specific rendering context:
 {
   "mermaid-sonar": {
     "viewport": {
-      "profile": "custom-docs",
+      "profile": "custom-mkdocs",
       "profiles": {
-        "custom-docs": {
-          "name": "custom-docs",
+        "custom-mkdocs": {
+          "name": "custom-mkdocs",
           "description": "Custom documentation site",
           "maxWidth": 1100,
           "maxHeight": 1600,
@@ -636,7 +636,7 @@ project/
 ├── .sonarrc.json           # Global: strict rules
 ├── docs/
 │   └── api/
-│       └── .sonarrc.json   # API docs: relaxed rules
+│       └── .sonarrc.json   # API mkdocs: relaxed rules
 └── examples/
     └── .sonarrc.json       # Examples: minimal rules
 ```
@@ -734,8 +734,8 @@ Create a script to filter files:
 
 ```bash
 #!/bin/bash
-# analyze-docs.sh
-find docs -name "*.md" ! -path "*/legacy/*" -print0 | \
+# analyze-mkdocs.sh
+find mkdocs -name "*.md" ! -path "*/legacy/*" -print0 | \
   xargs -0 mermaid-sonar
 ```
 
