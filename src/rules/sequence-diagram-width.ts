@@ -42,7 +42,9 @@ function generateSuggestions(
     suggestions.push('Group related services into single participants where appropriate');
   }
 
-  suggestions.push('Consider using participant boxes to group related actors without showing all details');
+  suggestions.push(
+    'Consider using participant boxes to group related actors without showing all details'
+  );
 
   suggestions.push(
     'For complex systems, create overview diagram with main actors, then detail diagrams for subsystems'

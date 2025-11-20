@@ -102,8 +102,7 @@ function extractParticipants(content: string): Map<string, Participant> {
   }
 
   // Second pass: implicit participants from messages
-  const messagePattern =
-    /([\w]+)\s*(->>?|-\)|-->>?|--\)|->|-->|-x|--x)\s*([\w]+)(?:\s*:\s*(.+))?/;
+  const messagePattern = /([\w]+)\s*(->>?|-\)|-->>?|--\)|->|-->|-x|--x)\s*([\w]+)(?:\s*:\s*(.+))?/;
 
   for (const line of lines) {
     const trimmed = line.trim();
