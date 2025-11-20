@@ -5,7 +5,7 @@
  */
 
 import type { Diagram } from '../extractors/types';
-import type { ClassNode, ClassDiagramParse, RelationshipType } from '../graph/class-parser';
+import type { ClassNode, ClassDiagramParse } from '../graph/class-parser';
 import { parseClassDiagram } from '../graph/class-parser';
 
 /**
@@ -59,7 +59,7 @@ function calculateInheritanceLevels(parse: ClassDiagramParse): {
   levelWidths: number[];
   maxDepth: number;
 } {
-  const { classes, relationships, graph } = parse;
+  const { classes, relationships } = parse;
 
   // Find inheritance relationships only
   const inheritanceEdges = relationships.filter((rel) => rel.type === 'inheritance');

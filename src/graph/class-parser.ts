@@ -9,13 +9,21 @@ import type { GraphRepresentation, Edge } from './types';
 
 /**
  * Represents a class node with its members
+ *
+ * Supports generic/template syntax (e.g., List~String~, Map~Key,Value~)
  */
 export interface ClassNode {
-  /** Class name */
+  /** Class name (may include generic parameters like List~String~) */
   name: string;
-  /** Class attributes/properties */
+  /**
+   * Class attributes/properties
+   * Visibility modifiers are preserved in the string (e.g., "+name: string", "-id: number")
+   */
   attributes: string[];
-  /** Class methods */
+  /**
+   * Class methods
+   * Visibility modifiers are preserved in the string (e.g., "+getName()", "#validate()")
+   */
   methods: string[];
 }
 
@@ -66,6 +74,14 @@ export interface ClassDiagramParse {
  *     +attribute: type
  *     +method()
  *   }
+ * - class Generic~Type~ (generic/template classes)
+ * - namespace Name { class ClassName } (namespace blocks)
+ *
+ * Visibility modifiers are preserved in member strings:
+ * - + : public
+ * - - : private
+ * - # : protected
+ * - ~ : package/internal
  */
 function extractClasses(content: string): Map<string, ClassNode> {
   const classes = new Map<string, ClassNode>();
@@ -73,6 +89,7 @@ function extractClasses(content: string): Map<string, ClassNode> {
 
   let currentClass: string | null = null;
   let inClassBlock = false;
+  let namespaceDepth = 0;
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -82,9 +99,24 @@ function extractClasses(content: string): Map<string, ClassNode> {
       continue;
     }
 
-    // Match class definition: "class ClassName" or "class ClassName {"
-    const classMatch = /^class\s+(\w+)\s*(\{?)/.exec(trimmed);
+    // Track namespace blocks (allow classes inside namespaces)
+    if (/^namespace\s+\w+\s*\{?/.test(trimmed)) {
+      if (trimmed.includes('{')) {
+        namespaceDepth++;
+      }
+      continue;
+    }
+
+    // Track closing braces for namespaces
+    if (trimmed === '}' && namespaceDepth > 0 && !inClassBlock) {
+      namespaceDepth--;
+      continue;
+    }
+
+    // Match class definition: "class ClassName" or "class ClassName {" or "class Generic~Type~"
+    const classMatch = /^class\s+([\w~<>,]+)\s*(\{?)/.exec(trimmed);
     if (classMatch) {
+
       const className = classMatch[1];
       const hasOpenBrace = classMatch[2] === '{';
 
@@ -103,9 +135,11 @@ function extractClasses(content: string): Map<string, ClassNode> {
       continue;
     }
 
-    // Match class member: "ClassName : +member" or "ClassName : +method()"
-    const memberMatch = /^(\w+)\s*:\s*(.+)/.exec(trimmed);
+    // Match class member: "ClassName : +member" or "ClassName : +method()" or "Generic~Type~ : +member"
+    // Must start with a word character (not just ~) to avoid matching visibility modifiers
+    const memberMatch = /^(\w[\w~<>,]*)\s*:\s*(.+)/.exec(trimmed);
     if (memberMatch) {
+
       const className = memberMatch[1];
       const member = memberMatch[2].trim();
 
@@ -135,13 +169,19 @@ function extractClasses(content: string): Map<string, ClassNode> {
         continue;
       }
 
-      // Parse member inside block
+      // Parse member inside block (skip empty lines)
+      if (!trimmed) {
+        continue;
+      }
+
       const blockMemberMatch = /^([+\-#~])?\s*(.+)/.exec(trimmed);
-      if (blockMemberMatch && trimmed) {
-        const member = blockMemberMatch[2].trim();
+      if (blockMemberMatch) {
+        const visibility = blockMemberMatch[1] || '';
+        const memberContent = blockMemberMatch[2].trim();
+        const member = visibility ? `${visibility}${memberContent}` : memberContent;
         const classNode = classes.get(currentClass)!;
 
-        if (member.includes('(')) {
+        if (memberContent.includes('(')) {
           classNode.methods.push(member);
         } else {
           classNode.attributes.push(member);
@@ -171,13 +211,18 @@ function extractRelationships(content: string): ClassRelationship[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Skip comments and class definitions
-    if (trimmed.startsWith('%%') || trimmed.startsWith('class ')) {
+    // Skip comments, class definitions, namespace declarations, and closing braces
+    if (
+      trimmed.startsWith('%%') ||
+      trimmed.startsWith('class ') ||
+      /^namespace\s+\w+/.test(trimmed) ||
+      trimmed === '}'
+    ) {
       continue;
     }
 
-    // Match inheritance: ClassA <|-- ClassB
-    const inheritanceMatch = /(\w+)\s*<\|--\s*(\w+)(?:\s*:\s*(.+))?/.exec(trimmed);
+    // Match inheritance: ClassA <|-- ClassB or Generic~Type~ <|-- ClassB
+    const inheritanceMatch = /([\w~<>,]+)\s*<\|--\s*([\w~<>,]+)(?:\s*:\s*(.+))?/.exec(trimmed);
     if (inheritanceMatch) {
       relationships.push({
         from: inheritanceMatch[2], // Child
@@ -188,8 +233,8 @@ function extractRelationships(content: string): ClassRelationship[] {
       continue;
     }
 
-    // Match composition: ClassA *-- ClassB
-    const compositionMatch = /(\w+)\s*\*--\s*(\w+)(?:\s*:\s*(.+))?/.exec(trimmed);
+    // Match composition: ClassA *-- ClassB or Generic~Type~ *-- ClassB
+    const compositionMatch = /([\w~<>,]+)\s*\*--\s*([\w~<>,]+)(?:\s*:\s*(.+))?/.exec(trimmed);
     if (compositionMatch) {
       relationships.push({
         from: compositionMatch[1],
@@ -200,8 +245,8 @@ function extractRelationships(content: string): ClassRelationship[] {
       continue;
     }
 
-    // Match aggregation: ClassA o-- ClassB
-    const aggregationMatch = /(\w+)\s*o--\s*(\w+)(?:\s*:\s*(.+))?/.exec(trimmed);
+    // Match aggregation: ClassA o-- ClassB or Generic~Type~ o-- ClassB
+    const aggregationMatch = /([\w~<>,]+)\s*o--\s*([\w~<>,]+)(?:\s*:\s*(.+))?/.exec(trimmed);
     if (aggregationMatch) {
       relationships.push({
         from: aggregationMatch[1],
@@ -212,8 +257,8 @@ function extractRelationships(content: string): ClassRelationship[] {
       continue;
     }
 
-    // Match dependency: ClassA ..> ClassB
-    const dependencyMatch = /(\w+)\s*\.\.>\s*(\w+)(?:\s*:\s*(.+))?/.exec(trimmed);
+    // Match dependency: ClassA ..> ClassB or Generic~Type~ ..> ClassB
+    const dependencyMatch = /([\w~<>,]+)\s*\.\.>\s*([\w~<>,]+)(?:\s*:\s*(.+))?/.exec(trimmed);
     if (dependencyMatch) {
       relationships.push({
         from: dependencyMatch[1],
@@ -224,9 +269,9 @@ function extractRelationships(content: string): ClassRelationship[] {
       continue;
     }
 
-    // Match association with optional multiplicity: ClassA "1" --> "many" ClassB
+    // Match association with optional multiplicity: ClassA "1" --> "many" ClassB or Generic~Type~ --> ClassB
     const associationMatch =
-      /(\w+)\s*(?:"([^"]+)")?\s*-->\s*(?:"([^"]+)")?\s*(\w+)(?:\s*:\s*(.+))?/.exec(trimmed);
+      /([\w~<>,]+)\s*(?:"([^"]+)")?\s*-->\s*(?:"([^"]+)")?\s*([\w~<>,]+)(?:\s*:\s*(.+))?/.exec(trimmed);
     if (associationMatch) {
       relationships.push({
         from: associationMatch[1],

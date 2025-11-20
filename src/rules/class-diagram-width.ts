@@ -15,7 +15,6 @@ import type { Metrics } from '../analyzers/types';
 import {
   analyzeClassDiagram,
   estimateClassDiagramWidth,
-  estimateClassDiagramHeight,
 } from '../analyzers/class-analyzer';
 
 /**
@@ -67,7 +66,7 @@ export const classDiagramWidthRule: Rule = {
   name: 'class-diagram-width',
   defaultSeverity: 'warning',
 
-  check(diagram: Diagram, metrics: Metrics, config: RuleConfig): Issue | null {
+  check(diagram: Diagram, _metrics: Metrics, config: RuleConfig): Issue | null {
     // Only check class diagrams
     if (diagram.type !== 'class') {
       return null;
@@ -78,7 +77,6 @@ export const classDiagramWidthRule: Rule = {
     // Analyze class diagram
     const analysis = analyzeClassDiagram(diagram);
     const width = estimateClassDiagramWidth(analysis);
-    const height = estimateClassDiagramHeight(analysis);
 
     // Configuration with defaults
     const targetWidth = (config.targetWidth as number) ?? 1200;
