@@ -205,6 +205,10 @@ function mergeConfig(userConfig: PartialConfig): Config {
         ...defaultConfig.rules['vertical-height-readability'],
         ...userConfig.rules?.['vertical-height-readability'],
       },
+      'class-diagram-width': {
+        ...defaultConfig.rules['class-diagram-width'],
+        ...userConfig.rules?.['class-diagram-width'],
+      },
       'long-labels': {
         ...defaultConfig.rules['long-labels'],
         ...userConfig.rules?.['long-labels'],

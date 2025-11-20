@@ -21,6 +21,7 @@ import { syntaxValidationRule } from './syntax-validation';
 import { horizontalChainLengthRule } from './horizontal-chain-length';
 import { horizontalWidthReadabilityRule } from './horizontal-width-readability';
 import { verticalHeightReadabilityRule } from './vertical-height-readability';
+import { classDiagramWidthRule } from './class-diagram-width';
 
 /**
  * Registry of all available rules
@@ -35,6 +36,7 @@ const ruleRegistry = new Map<string, Rule>([
   [horizontalChainLengthRule.name, horizontalChainLengthRule],
   [horizontalWidthReadabilityRule.name, horizontalWidthReadabilityRule],
   [verticalHeightReadabilityRule.name, verticalHeightReadabilityRule],
+  [classDiagramWidthRule.name, classDiagramWidthRule],
   [longLabelsRule.name, longLabelsRule],
   [reservedWordsRule.name, reservedWordsRule],
   [disconnectedRule.name, disconnectedRule],

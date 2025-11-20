@@ -61,6 +61,7 @@ export interface Config {
     'horizontal-chain-too-long': RuleConfig;
     'horizontal-width-readability': RuleConfig;
     'vertical-height-readability': RuleConfig;
+    'class-diagram-width': RuleConfig;
     'long-labels': RuleConfig;
     'reserved-words': RuleConfig;
     'disconnected-components': RuleConfig;

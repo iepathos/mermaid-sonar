@@ -73,6 +73,16 @@ export const defaultConfig: Config = {
       nodeHeight: 40,
       verticalSpacing: 50,
     },
+    'class-diagram-width': {
+      enabled: true,
+      severity: 'warning',
+      targetWidth: 1200,
+      thresholds: {
+        info: 1500,
+        warning: 2000,
+        error: 2500,
+      },
+    },
     'long-labels': {
       enabled: true,
       severity: 'warning',

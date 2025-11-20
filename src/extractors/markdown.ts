@@ -16,6 +16,10 @@ import type { Diagram, DiagramType } from './types';
 function detectDiagramType(content: string): DiagramType {
   const firstLine = content.trim().split('\n')[0] || '';
 
+  if (/^\s*classDiagram/i.test(firstLine)) {
+    return 'class';
+  }
+
   if (/^\s*stateDiagram(-v2)?/i.test(firstLine)) {
     return 'state';
   }
