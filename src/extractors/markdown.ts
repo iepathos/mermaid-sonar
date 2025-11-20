@@ -16,6 +16,10 @@ import type { Diagram, DiagramType } from './types';
 function detectDiagramType(content: string): DiagramType {
   const firstLine = content.trim().split('\n')[0] || '';
 
+  if (/^\s*stateDiagram(-v2)?/i.test(firstLine)) {
+    return 'state';
+  }
+
   if (/^\s*(graph|flowchart)\s+(TD|LR|TB|RL)/i.test(firstLine)) {
     return firstLine.toLowerCase().includes('flowchart') ? 'flowchart' : 'graph';
   }

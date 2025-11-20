@@ -14,6 +14,9 @@ import type { GraphRepresentation, Edge } from './types';
  * - A ==> B (thick arrow)
  * - A -->|label| B (labeled edge)
  * - A <--> B (bidirectional)
+ * - [*] --> A (state diagram start state)
+ * - A --> [*] (state diagram end state)
+ * - StateA --> StateB : label (state diagram labeled transition)
  *
  * @param content - Raw Mermaid diagram code
  * @returns Array of edges
@@ -30,25 +33,51 @@ function extractEdges(content: string): Edge[] {
       continue;
     }
 
+    // Skip state diagram direction lines
+    if (trimmed.startsWith('direction ')) {
+      continue;
+    }
+
+    // Skip composite state definitions
+    if (trimmed.startsWith('state ') && trimmed.includes('{')) {
+      continue;
+    }
+
     // Match edge pattern: NODE1 -->|optional label| NODE2
-    const edgePattern = /(\w+)\s*(-->|==>|-.->|<-->)\s*(?:\|([^|]+)\|)?\s*(\w+)/g;
+    // Also handles state diagram patterns:
+    // - [*] --> StateA (start state)
+    // - StateA --> [*] (end state)
+    // - StateA --> StateB : label (state diagram colon-labeled transition)
+    const edgePattern =
+      /(\[\*\]|\w+)\s*(-->|==>|-.->|<-->)\s*(?:\|([^|]+)\|)?\s*(\[\*\]|\w+)(?:\s*:\s*(.+))?/g;
     let match;
 
     while ((match = edgePattern.exec(trimmed)) !== null) {
-      const [, from, arrow, label, to] = match;
+      const [, from, arrow, pipeLabel, to, colonLabel] = match;
+
+      // Skip if from or to is empty
+      if (!from || !to) {
+        continue;
+      }
+
+      // Convert [*] markers to special node IDs
+      const fromNode = from === '[*]' ? '__START__' : from;
+      const toNode = to === '[*]' ? '__END__' : to;
+
+      const label = pipeLabel?.trim() || colonLabel?.trim();
 
       edges.push({
-        from,
-        to,
-        label: label?.trim(),
+        from: fromNode,
+        to: toNode,
+        label,
       });
 
       // For bidirectional arrows, add reverse edge
       if (arrow === '<-->') {
         edges.push({
-          from: to,
-          to: from,
-          label: label?.trim(),
+          from: toNode,
+          to: fromNode,
+          label,
         });
       }
     }

@@ -57,13 +57,25 @@ interface WidthAnalysis {
 function detectLayout(diagram: Diagram): LayoutDirection {
   const content = diagram.content.toLowerCase();
 
-  if (content.includes('graph lr') || content.includes('flowchart lr')) {
+  if (
+    content.includes('graph lr') ||
+    content.includes('flowchart lr') ||
+    content.includes('direction lr')
+  ) {
     return 'LR';
   }
-  if (content.includes('graph rl') || content.includes('flowchart rl')) {
+  if (
+    content.includes('graph rl') ||
+    content.includes('flowchart rl') ||
+    content.includes('direction rl')
+  ) {
     return 'RL';
   }
-  if (content.includes('graph tb') || content.includes('flowchart tb')) {
+  if (
+    content.includes('graph tb') ||
+    content.includes('flowchart tb') ||
+    content.includes('direction tb')
+  ) {
     return 'TB';
   }
 
