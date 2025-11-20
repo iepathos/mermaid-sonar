@@ -4,7 +4,7 @@
 
 A complexity analyzer and readability linter for Mermaid diagrams. Like sonar detects underwater obstacles, Mermaid-Sonar detects hidden complexity issues before they cause readability problems.
 
-[![npm version](https://badge.fury.io/js/mermaid-sonar.svg)](https://www.npmjs.com/package/mermaid-sonar)
+[![npm version](https://img.shields.io/npm/v/mermaid-sonar.svg)](https://www.npmjs.com/package/mermaid-sonar)
 [![npm downloads](https://img.shields.io/npm/dt/mermaid-sonar.svg)](https://www.npmjs.com/package/mermaid-sonar)
 [![Coverage](https://github.com/iepathos/mermaid-sonar/workflows/Coverage/badge.svg)](https://github.com/iepathos/mermaid-sonar/actions/workflows/coverage.yml)
 [![Release](https://github.com/iepathos/mermaid-sonar/workflows/Release/badge.svg)](https://github.com/iepathos/mermaid-sonar/actions/workflows/release.yml)
