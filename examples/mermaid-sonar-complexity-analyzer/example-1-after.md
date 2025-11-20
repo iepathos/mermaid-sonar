@@ -8,16 +8,23 @@ Convert to LR layout - stacks branches vertically for natural scrolling.
 
 ```mermaid
 graph LR
-    Root["ripgrep Documentation"] --> Intro["Introduction
-    Get Started"]
-    Root --> Guide["User Guide
-    Basic Features"]
-    Root --> Advanced["Advanced Topics
-    Power Users"]
-    Root --> Reference["Reference
-    Complete API"]
-    Root --> Troubleshooting["Troubleshooting
-    Common Issues"]
+    Root["Software Development
+Lifecycle"] --> Plan["Planning & Design
+Requirements"]
+    Root --> Dev["Development
+Implementation"]
+    Root --> Test["Testing & QA
+Quality Assurance"]
+    Root --> Deploy["Deployment
+Release Management"]
+    Root --> Monitor["Monitoring
+Observability"]
+    Root --> Maintain["Maintenance
+Bug Fixes"]
+    Root --> Doc["Documentation
+User Guides"]
+    Root --> Security["Security
+Vulnerability Mgmt"]
 ```
 
 ## Expected Validation Result
@@ -30,12 +37,13 @@ When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ## What Changed
 
-- **TD layout with parallel branches** = horizontal spread (width problem)
-- **LR layout with parallel branches** = vertical stacking (natural scrolling)
+- **TD layout with 8 parallel branches** = 1302px horizontal spread (63% over limit)
+- **LR layout with 8 parallel branches** = ~400px vertical stacking (natural scrolling)
 - Same node count and complexity
 - Pure layout orientation change
+- **Width improvement**: 1302px → ~400px (69% reduction)
 
 ## Compare
 
-- Before: `example-1-before.md` (⚠️ 712px width warning)
+- Before: `example-1-before.md` (❌ 1302px ERROR - 502px over limit)
 - After: `example-1-after.md` (✅ passes validation)

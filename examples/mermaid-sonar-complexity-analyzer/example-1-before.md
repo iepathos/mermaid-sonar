@@ -2,22 +2,29 @@
 
 ## Problem
 
-Wide tree diagrams in TD layout create excessive horizontal width when they have many parallel branches.
+Wide tree diagrams with many parallel branches in TD layout create excessive horizontal width. With 8 parallel branches, this diagram exceeds viewport limits by 63%.
 
-**Issue**: 5 parallel branches in TD layout = 712px width (warning threshold)
+**Issue**: 8 parallel branches in TD layout = 1302px width (ERROR - 502px over 800px limit)
 
 ```mermaid
 graph TD
-    Root["ripgrep Documentation"] --> Intro["Introduction
-    Get Started"]
-    Root --> Guide["User Guide
-    Basic Features"]
-    Root --> Advanced["Advanced Topics
-    Power Users"]
-    Root --> Reference["Reference
-    Complete API"]
-    Root --> Troubleshooting["Troubleshooting
-    Common Issues"]
+    Root["Software Development
+Lifecycle"] --> Plan["Planning & Design
+Requirements"]
+    Root --> Dev["Development
+Implementation"]
+    Root --> Test["Testing & QA
+Quality Assurance"]
+    Root --> Deploy["Deployment
+Release Management"]
+    Root --> Monitor["Monitoring
+Observability"]
+    Root --> Maintain["Maintenance
+Bug Fixes"]
+    Root --> Doc["Documentation
+User Guides"]
+    Root --> Security["Security
+Vulnerability Mgmt"]
 ```
 
 ## Expected Validation Result
@@ -25,10 +32,13 @@ graph TD
 When running `npx mermaid-sonar --viewport-profile mkdocs` on this file:
 
 ```
-⚠️  Diagram width (712px) exceeds viewport limit due to parallel branches
-    Suggestions:
-    1. Group related branches into subgraphs to reduce width
-    2. Convert to LR layout for vertical stacking
+❌ ERROR: Diagram width (1302px) exceeds viewport limit by 502px (63% over)
+   This TD layout with 7 parallel branches creates excessive width.
+
+   Suggestions:
+   1. Group related branches into subgraphs to reduce width
+   2. Convert to LR layout for vertical stacking
+   3. Split wide branches into separate diagrams
 ```
 
 ## The Fix

@@ -31,13 +31,14 @@ npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-an
 - `example-1-before.md` - Problematic TD layout
 - `example-1-after.md` - Fixed with LR layout
 
-**Problem**: Wide tree with parallel branches in TD layout creates excessive horizontal width
+**Problem**: Wide tree with 8 parallel branches in TD layout creates excessive horizontal width
 
 **Fix**: Convert to LR layout for natural vertical scrolling
 
 **Results**:
-- Before: ⚠️ 712px width (warning threshold)
-- After: ✅ Passes validation
+- Before: ❌ 1302px width ERROR (502px over 800px limit, 63% over)
+- After: ✅ Passes validation (~400px width)
+- **Improvement**: 1302px → ~400px (69% reduction)
 
 **Strategy**: Pure layout orientation change - works when branches are parallel, not sequential
 
@@ -96,11 +97,11 @@ npx mermaid-sonar --viewport-profile mkdocs examples/mermaid-sonar-complexity-an
 ```
 
 **Expected output:**
-- `example-1-before.md`: ⚠️ 1 warning (712px width)
-- `example-2-before.md`: ⚠️ 1 warning (712px width, 4 parallel branches)
-- `example-3-before.md`: ❌ Errors (high complexity)
+- `example-1-before.md`: ❌ 1 error (1302px width - 63% over limit)
+- `example-2-before.md`: ℹ️ 1 info (616px width, 4 parallel branches)
+- `example-3-before.md`: No issues detected (intentional baseline)
 
-**Total**: Multiple warnings/errors demonstrating problematic diagrams
+**Total**: 1 error, 1 info demonstrating problematic diagrams
 
 ### Running on "After" Files (Should Pass or Have Acceptable Warnings)
 
