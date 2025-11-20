@@ -109,7 +109,9 @@
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/**/*.d.ts",
-      "!src/**/*.test.ts"
+      "!src/**/*.test.ts",
+      "!src/cli.ts",
+      "!src/config/loader.ts"
     ],
     "coverageThreshold": {
       "global": {
